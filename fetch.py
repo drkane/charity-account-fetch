@@ -137,42 +137,56 @@ def download_account_parser(regno: str, fyend: date, destination: str=".", **kwa
         destination=destination
     )
 
-def download_from_csv(csvfile, regno_column: str="regno", fyend_column: str="fyend", destination: str=".", logfile=None, **kwargs):
+def download_from_csv(csvfile, regno_column: str="regno", fyend_column: str="fyend", destination: str=".", logfile=None, skip_rows: int=0, **kwargs):
     reader = csv.DictReader(csvfile)
+
+    logging_fields = [
+        "success",
+        "error",
+        "fetch_datetime",
+        "file_location",
+        "file_name",
+        "file_size",
+        "download_timetaken",
+    ]
 
     for k, row in enumerate(reader):
 
         if logfile and k==0:
             with open(logfile, 'w', newline='') as logf:
                 writer = csv.writer(logf)
-                writer.writerow([h for h in row.keys()] + [
-                    "success",
-                    "error",
-                    "file_location",
-                    "file_name",
-                    "file_size",
-                    "download_timetaken",
-                ])
+                writer.writerow(
+                    [
+                        h for h in row.keys() if h not in logging_fields
+                    ] + logging_fields
+                )
 
-        regno = row[regno_column]
-        fyend = row.get(fyend_column)
-        result = {}
-        if fyend:
-            fyend = parse_datetime(fyend)
-            result = download_account(
-                construct_ccew_account_url(regno, fyend),
-                regno=regno,
-                fyend=fyend,
-                destination=destination
-            )
+        if skip_rows and skip_rows > k:
+            result = {
+                "error": "Row skipped"
+            }
+
+        else:
+            regno = row[regno_column]
+            fyend = row.get(fyend_column)
+            result = {}
+            if fyend:
+                fyend = parse_datetime(fyend)
+                result = download_account(
+                    construct_ccew_account_url(regno, fyend),
+                    regno=regno,
+                    fyend=fyend,
+                    destination=destination
+                )
         
 
         if logfile:
             with open(logfile, 'a', newline='') as logf:
                 writer = csv.writer(logf)
-                writer.writerow([v for v in row.values()] + [
+                writer.writerow([v for h, v in row.items() if h not in logging_fields] + [
                     result.get("file_location") is not None,
                     result.get("error"),
+                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     result.get("file_location"),
                     result.get("file_name"),
                     result.get("file_size"),
@@ -214,6 +228,7 @@ if __name__ == "__main__":
     csv_parser.add_argument('--fyend-column', default="fyend", help='Name of the column with the financial year end in (if not found then the latest accounts will be used)')
     csv_parser.add_argument('--destination', default=".", help='Folder in which to save accounts')
     csv_parser.add_argument('--logfile', help='File to output results')
+    csv_parser.add_argument('--skip-rows', type=int, default=0, help='Number of rows to skip when parsing file')
     csv_parser.set_defaults(func=download_from_csv)
     
     args = parser.parse_args()
