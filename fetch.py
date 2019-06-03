@@ -135,14 +135,6 @@ def download_from_csv(csvfile, regno_column: str="regno", fyend_column: str="fye
                 fyend=fyend,
                 destination=destination
             )
-        else:
-            accounts = ccew_list_accounts(regno)
-            download_account(
-                accounts[0]['url'],
-                regno=regno,
-                fyend=accounts[0]['fyend'],
-                destination=destination
-            )
 
 
 
