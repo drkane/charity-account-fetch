@@ -1,6 +1,6 @@
 import os
 import argparse
-from datetime import date
+from datetime import date, datetime
 import csv
 import logging
 
@@ -25,6 +25,12 @@ def filesize_text_to_int(filesize: str) -> int:
     elif "KIB" in filesize:
         return int(filesize.replace("KIB", "")) * 1000
     return int(filesize)
+
+def parse_datetime(d: str, f: str="%Y-%m-%d") -> date:
+    """
+    Parse a date from a string
+    """
+    return datetime.strptime(d, f).date()
 
 def ccew_list_accounts(regno: str) -> list:
     """
@@ -128,7 +134,7 @@ def download_from_csv(csvfile, regno_column: str="regno", fyend_column: str="fye
         regno = row[regno_column]
         fyend = row.get(fyend_column)
         if fyend:
-            fyend = dateutil.parser.parse(fyend)
+            fyend = parse_datetime(fyend)
             download_account(
                 construct_ccew_account_url(regno, fyend),
                 regno=regno,
@@ -162,7 +168,7 @@ if __name__ == "__main__":
 
     account_parser = subparsers.add_parser('account', help='Download an account based on charity number and financial year end')
     account_parser.add_argument('regno', help="Charity number")
-    account_parser.add_argument('fyend', type=dateutil.parser.parse, help="Financial year end (format YYYY-MM-DD)")
+    account_parser.add_argument('fyend', type=parse_datetime, help="Financial year end (format YYYY-MM-DD)")
     account_parser.add_argument('--destination', default=".", help='Folder in which to save accounts')
     account_parser.set_defaults(func=download_account_parser)
 
