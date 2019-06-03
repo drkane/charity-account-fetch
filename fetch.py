@@ -62,15 +62,19 @@ def construct_ccew_account_url(regno: str, fyend: date) -> str:
         fyend=fyend.strftime("%Y%m%d")
     )
 
-def download_account(url: str, regno: str=None, fyend: date=None, destination: str=".") -> dict:
+def download_account(url: str, regno: str=None, fyend: date=None, destination: str=".", session=None) -> dict:
     """
     Download a charity account from an URL
     """
+
+    if not session:
+        session = requests.Session()
+
     if regno is None or fyend is None:
         filename = url.rsplit('/', 1)[-1]
     else:
         filename = '{}_{:%Y%m%d}.pdf'.format(regno, fyend)
-    r = requests.get(url)
+    r = session.get(url)
     logging.debug("Fetching account PDF: {}".format(url))
     if getattr(r, "from_cache", False):
         logging.debug("Used cache")
@@ -121,12 +125,14 @@ def download_latest_account(regno: str, destination: str=".", **kwargs: dict):
 
 def download_all_accounts(regno: str, destination: str=".", **kwargs: dict):
     accounts = ccew_list_accounts(regno)
+    session = requests.Session()
     for a in accounts:
         download_account(
             a['url'],
             regno=regno,
             fyend=a['fyend'],
-            destination=destination
+            destination=destination,
+            session=session,
         )
 
 def download_account_parser(regno: str, fyend: date, destination: str=".", **kwargs):
@@ -139,6 +145,7 @@ def download_account_parser(regno: str, fyend: date, destination: str=".", **kwa
 
 def download_from_csv(csvfile, regno_column: str="regno", fyend_column: str="fyend", destination: str=".", logfile=None, skip_rows: int=0, **kwargs):
     reader = csv.DictReader(csvfile)
+    session = requests.Session()
 
     logging_fields = [
         "success",
@@ -176,7 +183,8 @@ def download_from_csv(csvfile, regno_column: str="regno", fyend_column: str="fye
                     construct_ccew_account_url(regno, fyend),
                     regno=regno,
                     fyend=fyend,
-                    destination=destination
+                    destination=destination,
+                    session=session,
                 )
         
 
