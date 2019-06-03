@@ -62,7 +62,7 @@ def construct_ccew_account_url(regno: str, fyend: date) -> str:
         fyend=fyend.strftime("%Y%m%d")
     )
 
-def download_account(url: str, regno: str=None, fyend: date=None, destination: str="."):
+def download_account(url: str, regno: str=None, fyend: date=None, destination: str=".") -> dict:
     """
     Download a charity account from an URL
     """
@@ -78,7 +78,9 @@ def download_account(url: str, regno: str=None, fyend: date=None, destination: s
         r.raise_for_status()
     except requests.exceptions.HTTPError:
         logging.error("Account not found: {}".format(url))
-        return
+        return {
+            "error": "Account not found"
+        }
     
     if not os.path.exists(destination):
         logging.debug("Creating directory: {}".format(destination))
@@ -86,8 +88,15 @@ def download_account(url: str, regno: str=None, fyend: date=None, destination: s
 
     dest = os.path.join(destination, filename)
     logging.debug("Saving to: {}".format(dest))
-    with open(os.path.join(destination, filename), 'wb') as f:
+    with open(dest, 'wb') as f:
         f.write(r.content)
+
+    return {
+        "file_location": dest,
+        "file_name": filename,
+        "file_size": len(r.content),
+        "download_timetaken": r.elapsed.total_seconds(),
+    }
 
 def list_accounts_for_download(regno: str, destination: str=".", **kwargs: dict):
     accounts = ccew_list_accounts(regno)
@@ -128,20 +137,47 @@ def download_account_parser(regno: str, fyend: date, destination: str=".", **kwa
         destination=destination
     )
 
-def download_from_csv(csvfile, regno_column: str="regno", fyend_column: str="fyend", destination: str=".", **kwargs):
+def download_from_csv(csvfile, regno_column: str="regno", fyend_column: str="fyend", destination: str=".", logfile=None, **kwargs):
     reader = csv.DictReader(csvfile)
-    for row in reader:
+
+    for k, row in enumerate(reader):
+
+        if logfile and k==0:
+            with open(logfile, 'w', newline='') as logf:
+                writer = csv.writer(logf)
+                writer.writerow([h for h in row.keys()] + [
+                    "success",
+                    "error",
+                    "file_location",
+                    "file_name",
+                    "file_size",
+                    "download_timetaken",
+                ])
+
         regno = row[regno_column]
         fyend = row.get(fyend_column)
+        result = {}
         if fyend:
             fyend = parse_datetime(fyend)
-            download_account(
+            result = download_account(
                 construct_ccew_account_url(regno, fyend),
                 regno=regno,
                 fyend=fyend,
                 destination=destination
             )
+        
 
+        if logfile:
+            with open(logfile, 'a', newline='') as logf:
+                writer = csv.writer(logf)
+                writer.writerow([v for v in row.values()] + [
+                    result.get("file_location") is not None,
+                    result.get("error"),
+                    result.get("file_location"),
+                    result.get("file_name"),
+                    result.get("file_size"),
+                    result.get("download_timetaken"),
+                ])
 
 
 if __name__ == "__main__":
@@ -177,6 +213,7 @@ if __name__ == "__main__":
     csv_parser.add_argument('--regno-column', default="regno", help='Name of the column with a charity number in')
     csv_parser.add_argument('--fyend-column', default="fyend", help='Name of the column with the financial year end in (if not found then the latest accounts will be used)')
     csv_parser.add_argument('--destination', default=".", help='Folder in which to save accounts')
+    csv_parser.add_argument('--logfile', help='File to output results')
     csv_parser.set_defaults(func=download_from_csv)
     
     args = parser.parse_args()
