@@ -2,4 +2,5 @@ data/
 *.sqlite
 *.pdf
 *.csv
+*.txt
 env/

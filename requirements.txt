@@ -7,10 +7,17 @@ certifi==2019.3.9
 chardet==3.0.4
 Click==7.0
 idna==2.8
+pdfminer.six==20181108
+pdfplumber==0.5.13
+Pillow==6.1.0
+pycryptodome==3.9.0
 python-dateutil==2.8.0
 requests==2.22.0
 requests-cache==0.4.13
 six==1.12.0
+sortedcontainers==2.1.0
 soupsieve==1.9.1
 toml==0.10.0
+unicodecsv==0.14.1
 urllib3==1.24.2
+Wand==0.5.7
