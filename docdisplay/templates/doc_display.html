@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="w-20 fl ph2">
+    <h2>Document {{id}}</h2>
+    <p>Charity: <a href='{{ url_for("main.charity_get", regno=result.regno) }}'>{{result.regno}}</a></p>
+</div>
+<div class="w-40 fl ph2">
+    <pre class="pa2 bg-washed-yellow b--gray bw1 ba f5 pre vh-75 sans-serif base-font ma0">
+        {{result.attachment.content}}
+    </pre>
+</div>
+<div class="w-40 fl ph2">
+    <iframe src='{{url_for("doc.doc_get_pdf", id=id)}}' class="w-100 vh-75"></iframe>
+</div>
+{% endblock content %}

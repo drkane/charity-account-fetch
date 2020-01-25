@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>Upload a document</h2>
+    <form method="post" enctype="multipart/form-data">
+        <label class="db w-100 mb4 b">Charity number: <input class="db cf pa1 ba bw1 b--gray" type='text' name='regno' /></label>
+        <label class="db w-100 mb4 b">Charity name: <input class="db cf pa1 ba bw1 b--gray" type='text' name='name' /></label>
+        <label class="db w-100 mb4 b">Financial year end: <input class="db cf pa1 ba bw1 b--gray" type='date' name='fye' /></label>
+        <label class="db w-100 mb4 b">Income: <input class="db cf pa1 ba bw1 b--gray tr" type='number' name='income' /></label>
+        <label class="db w-100 mb4 b">Spending: <input class="db cf pa1 ba bw1 b--gray tr" type='number' name='spending' /></label>
+        <label class="db w-100 mb4 b">Total assets: <input class="db cf pa1 ba bw1 b--gray tr" type='number' name='assets' /></label>
+        <input class="" type='file' name='doc' />
+        <input class="" type='submit' value='Upload doc' />
+    </form>
+{% endblock content %}
