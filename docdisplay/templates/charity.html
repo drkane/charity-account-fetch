@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>Charity {{regno}}</h2>
+    <p>Accounts:</p>
+    {% if results %}
+    <ul class="">
+        {% for r in results %}
+        <li><a href="{{ url_for('main.charity_get', regno=regno) }}">{{"{:%Y-%m-%d}".format(r.fyend)}} [{{ r.size }}]</a></li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+{% endblock content %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>Search for a charity</h2>
+    <form>
+        <input class="" value="{{q}}" name="q" />
+        <input type='submit' class="" value="Search" name="q" />
+    </form>
+    <p>Results:</p>
+    {% if results %}
+    <ul class="">
+        {% for r in results %}
+        <li><a href="{{ url_for('main.charity_get', regno=r.regNo) }}">{{r.name}} [{{r.regNo}}]</a></li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+{% endblock content %}
