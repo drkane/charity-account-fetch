@@ -9,6 +9,7 @@ import requests_cache
 
 from docdisplay.db import get_db
 from docdisplay.fetch import ccew_list_accounts
+from docdisplay.utils import add_highlights
 
 requests_cache.install_cache('demo_cache')
 
@@ -45,14 +46,40 @@ def doc_get(id):
         id=id,
         _source_excludes=['filedata'],
     )
+    highlight = request.args.get('highlight')
+    _, highlight_count = add_highlights(
+        doc.get('_source', {}).get('attachment', {}).get('content', ''),
+        q=highlight
+    )
     return render_template(
-        'doc_display_embed.html',
+        'doc_display.html',
         result=doc.get('_source'),
         id=id,
         highlight=request.args.get('highlight'),
+        highlight_count=highlight_count,
     )
 
-# def add_highlights(doc, q):
+
+@bp.route('/<id>/embed')
+def doc_get_embed(id):
+    es = get_db()
+    doc = es.get(
+        index=current_app.config.get('ES_INDEX'),
+        doc_type='_doc',
+        id=id,
+        _source_excludes=['filedata'],
+    )
+    highlight = request.args.get('highlight')
+    content, highlight_count = add_highlights(
+        doc.get('_source', {}).get('attachment', {}).get('content', ''),
+        q=highlight
+    )
+    return render_template(
+        'doc_display_embed.html',
+        content=content,
+        id=id,
+        highlight=request.args.get('highlight'),
+    )
 
 
 @bp.route('/search')

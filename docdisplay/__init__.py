@@ -1,22 +1,11 @@
 import os
 import datetime
-import re
 
 from flask import Flask
 
 from . import db
 from . import blueprints as bp
-
-class HighlightNumbers(object):
-    def __init__(self, start=1):
-        self.count = start - 1
-
-    def __call__(self, match):
-        self.count += 1
-        return '<span class="bg-yellow" id="match-{}">{}</span>'.format(
-            self.count,
-            match.group(1)
-        )
+from .utils import add_highlights
 
 
 def create_app(test_config=None):
@@ -53,10 +42,7 @@ def create_app(test_config=None):
 
     @app.template_filter('highlight')
     def highlight_filter(s, q):
-        qs = q.split()
-        h = HighlightNumbers()
-        s = re.sub(r'({})'.format("|".join(qs)), h, s, flags=re.IGNORECASE)
-        return s
+        return add_highlights(s, q)[0]
 
 
     @app.route('/')

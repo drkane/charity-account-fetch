@@ -6,13 +6,18 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Archivo:400,700|Raleway:400,700">
     <link rel="stylesheet" href="https://dkane.net/theme/css/style.css" />
     <link rel="stylesheet" href="https://dkane.net/theme/css/pygment.css" />
+    <style>
+      .ws-pre {
+        white-space: pre-wrap;
+      }
+    </style>
     {% block headscripts %}
     {% endblock %}
     <title>{{ (title or default_title)|striptags }}</title>
   </head>
-  <body class="sans-serif base-font">
-    <div class="pre bg-washed-yellow f5">
-        {{result.attachment.content|highlight(highlight)|safe}}
+  <body class="sans-serif base-font bg-washed-yellow pa3">
+    <div class="ws-pre f5">
+        {{content|safe}}
     </div>
   </body>
 </html>

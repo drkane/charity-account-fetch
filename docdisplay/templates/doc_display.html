@@ -1,15 +1,115 @@
 {% extends "base.html" %}
+
+
+{% if highlight_count > 0 %}
+{% set doc_content_url = url_for("doc.doc_get_embed", id=id, highlight=highlight, _anchor="match-1") %}
+{% else %}
+{% set doc_content_url = url_for("doc.doc_get_embed", id=id) %}
+{% endif %}
+{% set doc_pdf_url = url_for("doc.doc_get_pdf", id=id) %}
+
 {% block content %}
-<div class="w-20 fl ph2">
+<div class="w-20-l fl-l pr4-l">
     <h2>Document {{id}}</h2>
     <p>Charity: <a href='{{ url_for("main.charity_get", regno=result.regno) }}'>{{result.regno}}</a></p>
+    <form>
+        <input type="search" name="highlight" value="{{ highlight or ''}}" class="pa1" />
+        <input type="submit" value="Search" />
+    </form>
+    {% if highlight_count %}
+    <div class="ma0 pa0 f5">
+        <p>Showing match <span id='currentMatch'>1</span> of <span class="">{{highlight_count}}</span></p>
+        <p class="f6 flex justify-between mw5">
+            <a href="#first-match" class="move-to-match" id='move-to-first'>&laquo; First</a>
+            <a href="#previous-match" class="move-to-match" id='move-to-previous'>&lsaquo; Prev</a>
+            <select class="move-to-match-select" id='move-to-match-select'>
+                <option value="" selected="selected">Go to</option>
+                {% for i in range(highlight_count) %}
+                <option value="{{i+1}}" class="f6">{{i+1}}</option>
+                {% endfor %}
+            </select>
+            <a href="#next-match" class="move-to-match" id='move-to-next'>&rsaquo; Next</a>
+            <a href="#last-match" class="move-to-match" id='move-to-last'>&raquo; Last</a>
+        </p>
+    </div>
+    {#<ul>
+    {% for i in range(highlight_count) %}
+        <li><a href="#match-{{i+1}}" class="move-to-match">Match {{i+1}}</a></li>
+    {% endfor %}
+    </ul>#}
+    {% endif %}
 </div>
-<div class="w-40 fl ph2">
-    <pre class="pa2 bg-washed-yellow b--gray bw1 ba f5 pre vh-75 sans-serif base-font ma0">
-        {{result.attachment.content}}
-    </pre>
+<div class="w-100 w-40-l fl-l mb2">
+    <h3 class="ma0 pa0 f4">
+        Document content
+        <span class="f6 normal">
+         - <a href="{{doc_content_url}}" class="link blue" target="_blank">View in new window</a>
+        </span>
+    </h3>
+    <iframe src='{{doc_content_url}}' class="w-100 vh-75 b--light-gray bw1 ba bg-washed-yellow" id="doc-preview"></iframe>
 </div>
-<div class="w-40 fl ph2">
-    <iframe src='{{url_for("doc.doc_get_pdf", id=id)}}' class="w-100 vh-75"></iframe>
+<div class="w-100 w-40-l fl-l pl4-l">
+    <h3 class="ma0 pa0 f4">
+        Document preview
+        <span class="f6 normal">
+         - <a href="{{doc_pdf_url}}" class="link blue" target="_blank">View in new window</a>
+        </span>
+    </h3>
+    <iframe src='{{doc_pdf_url}}' class="w-100 vh-75"></iframe>
 </div>
 {% endblock content %}
+
+{% block bodyscripts %}
+<script type='text/javascript'>
+var currentMatch = 1;
+const matchCounts = {{highlight_count|tojson}};
+
+const updateCurrentMatch = function(n){
+    currentMatch = Math.min(Math.max(n, 1), matchCounts);
+    document.getElementById('currentMatch').innerText = currentMatch;
+    document.getElementById('doc-preview').contentWindow.location.hash = 'match-' + currentMatch;
+    if(currentMatch == 1){
+        document.getElementById('move-to-previous').classList.add('o-0');
+        document.getElementById('move-to-first').classList.add('o-0');
+    } else {
+        document.getElementById('move-to-previous').classList.remove('o-0');
+        document.getElementById('move-to-first').classList.remove('o-0');
+    }
+    if(currentMatch == matchCounts){
+        document.getElementById('move-to-next').classList.add('o-0');
+        document.getElementById('move-to-last').classList.add('o-0');
+    } else {
+        document.getElementById('move-to-next').classList.remove('o-0');
+        document.getElementById('move-to-last').classList.remove('o-0');
+    }
+}
+updateCurrentMatch(1);
+
+Array.from(document.getElementsByClassName('move-to-match')).forEach((el) => {
+    el.addEventListener('click', (e) => {
+        e.preventDefault();
+        let moveTo = new URL(e.target.href).hash;
+        var n = currentMatch;
+        if(moveTo == '#previous-match'){
+            n = currentMatch - 1;
+        } else if(moveTo == '#next-match'){
+            n = currentMatch + 1;
+        } else if(moveTo == '#first-match'){
+            n = 1;
+        } else if(moveTo == '#last-match'){
+            n = matchCounts;
+        } else {
+            n = parseInt(moveTo.replace("#match-", ''));
+        }
+        updateCurrentMatch(n);
+    })
+});
+
+document.getElementById('move-to-match-select').addEventListener('change', (e) => {
+    e.preventDefault();
+    if(e.target.value){
+        updateCurrentMatch(parseInt(e.target.value));
+    }
+});
+</script>
+{% endblock %}
