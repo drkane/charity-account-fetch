@@ -5,7 +5,7 @@ from flask import Flask
 
 from . import db
 from . import blueprints as bp
-from .utils import add_highlights
+from .utils import add_highlights, parse_datetime
 
 
 def create_app(test_config=None):
@@ -43,5 +43,9 @@ def create_app(test_config=None):
     @app.template_filter('highlight')
     def highlight_filter(s, q):
         return add_highlights(s, q)[0]
+
+    @app.template_filter('dateformat')
+    def dateformat_filter(d, f="%Y-%m-%d", o=None):
+        return parse_datetime(d, f, o)
 
     return app

@@ -6,10 +6,15 @@
     <ul class="">
         {% for r in results %}
         <li>
-            <a href="{{ url_for('charity.charity_get', regno=regno) }}">
-                {{"{:%Y-%m-%d}".format(r.fyend)-}}
-            </a>
-            [{{ r.size|filesizeformat }}]
+            <form action="{{ url_for('doc.doc_upload')}}" method="POST">
+                <input type="hidden" class="dn" name="regno" value="{{regno}}" />
+                <input type="hidden" class="dn" name="url" value="{{r.url}}" />
+                <input type="hidden" class="dn" name="fye" value="{{ '{:%Y-%m-%d}'.format(r.fyend) }}" />
+                <button type="submit" class="link button-research bn pa0 ma0 bg-inherit pointer blue underline-hover">
+                    {{ '{:%d %b %Y}'.format(r.fyend) }}
+                </button>
+                [{{ r.size|filesizeformat }}]
+            </form>
         </li>
         {% endfor %}
     </ul>

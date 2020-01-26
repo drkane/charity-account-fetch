@@ -37,17 +37,25 @@
         {% endif %}
         {% endif %}
       </header>
+      {% block flashes %}
+      {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+          <ul class="flashes list ma0 pa0">
+              {% for category, message in messages %}
+              {% set bg = 'bg-washed-green' %}
+              {% if category == 'error' %}
+              {% set bg = 'bg-washed-red' %}
+              {% elif category == 'info' %}
+              {% set bg = 'bg-lightest-blue' %}
+              {% endif %}
+              <li class="pa2 {{bg}} ph3 ph5-ns b">{{ message }}</li>
+              {% endfor %}
+          </ul>
+          {% endif %}
+      {% endwith %}
+      {% endblock %}
       <section id="content" class="fl w-100 ph3 pv5 ph5-ns lh-copy f4">
       
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-            <ul class=flashes>
-                {% for message in messages %}
-                <li>{{ message }}</li>
-                {% endfor %}
-            </ul>
-            {% endif %}
-        {% endwith %}
         {% block content %}{% endblock %}
       </section>
     </main>

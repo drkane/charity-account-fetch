@@ -14,7 +14,7 @@
             </p>
             {% endif %}
             <form action="{{url_for('doc.doc_search')}}">
-                {{ search(q, 'Term to find in document') }}
+                {{ search(q, 'Term to find in document', 'Search documents') }}
             </form>
         </li>
         <li class="mb5 db">
@@ -24,7 +24,7 @@
                 </a>
             </h3>
             <form action="{{url_for('main.charity_search')}}">
-                {{ search(q, 'Search charities') }}
+                {{ search(q, 'Search charities', 'Search charities') }}
             </form>
         </li>
         <li class="mb5 db">

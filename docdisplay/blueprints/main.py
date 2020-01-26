@@ -16,7 +16,7 @@ def charity_search():
     CC_URL = 'https://beta.charitycommission.gov.uk/' + \
              'umbraco/api/charityApi/getSearchResults'
     cc_params = {
-        'searchText': request.args.get('q'),
+        'searchText': request.values.get('q'),
         'pageNumber': 1,
         'contextId': 1126,
     }
@@ -27,7 +27,7 @@ def charity_search():
     return render_template(
         'charitysearch.html',
         results=results,
-        q=request.args.get('q', '')
+        q=request.values.get('q', '')
     )
 
 

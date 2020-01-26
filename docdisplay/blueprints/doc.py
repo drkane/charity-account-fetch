@@ -7,9 +7,13 @@ from flask import (
     flash, redirect, url_for, make_response
 )
 from werkzeug.utils import secure_filename
+import requests
+import requests_cache
 
 from docdisplay.db import get_db
 from docdisplay.utils import add_highlights
+
+requests_cache.install_cache('demo_cache')
 
 CC_ACCOUNT_FILENAME = r'([0-9]+)_AC_([0-9]{4})([0-9]{2})([0-9]{2})_E_C.PDF'
 
@@ -44,7 +48,7 @@ def doc_get(id):
         id=id,
         _source_excludes=['filedata'],
     )
-    highlight = request.args.get('q')
+    highlight = request.values.get('q')
     _, highlight_count = add_highlights(
         doc.get('_source', {}).get('attachment', {}).get('content', ''),
         q=highlight
@@ -67,7 +71,7 @@ def doc_get_embed(id):
         id=id,
         _source_excludes=['filedata'],
     )
-    highlight = request.args.get('q')
+    highlight = request.values.get('q')
     content, highlight_count = add_highlights(
         doc.get('_source', {}).get('attachment', {}).get('content', ''),
         q=highlight
@@ -83,14 +87,14 @@ def doc_get_embed(id):
 @bp.route('/search')
 def doc_search():
     es = get_db()
-    q = request.args.get('q')
+    q = request.values.get('q')
     results = None
     resultCount = 0
     if q:
         doc = es.search(
             index=current_app.config.get('ES_INDEX'),
             doc_type='_doc',
-            q=request.args.get('q'),
+            q=request.values.get('q'),
             _source_excludes=['filedata'],
             body=dict(
                 highlight={
@@ -123,25 +127,50 @@ def doc_upload():
     es = get_db()
     if request.method == 'POST':
 
+        content = None
+
         # check file is provided
         doc = request.files.get('doc')
-        if 'doc' not in request.files:
-            flash('No file part')
+        url = request.values.get('url')
+        if doc:
+
+            # check the filename
+            filename = secure_filename(doc.filename)
+            content = doc.read()
+
+        # download from an URL
+        elif url:
+
+            r = requests.get(url)
+            if not r.status_code == requests.codes.ok:
+                flash("Couldn't load from URL: {}".format(url), 'error')
+                return redirect(request.url)
+            content = r.content
+            filename = url
+            if "Content-Disposition" in r.headers.keys():
+                filename = re.findall(
+                    "filename=(.+)",
+                    r.headers["Content-Disposition"]
+                )[0]
+            else:
+                filename = url.split("/")[-1]
+
+        else:
+            flash('No file found', 'error')
             return redirect(request.url)
 
         # check the filename
-        filename = secure_filename(doc.filename)
         if not filename.lower().endswith(".pdf"):
-            flash('File must be a PDF')
+            flash('File must be a PDF', 'error')
             return redirect(request.url)
 
         charity = {
-            "regno": request.args.get('regno'),
-            "name": request.args.get('name'),
-            "fye": request.args.get('fye'),
-            "income": request.args.get('income'),
-            "spending": request.args.get('spending'),
-            "assets": request.args.get('assets'),
+            "regno": request.values.get('regno'),
+            "fye": request.values.get('fye'),
+            "name": request.values.get('name'),
+            "income": request.values.get('income'),
+            "spending": request.values.get('spending'),
+            "assets": request.values.get('assets'),
         }
 
         if not charity["regno"] or not charity["fye"]:
@@ -154,7 +183,12 @@ def doc_upload():
                     nameparse.group(4),
                 )
             else:
-                flash('Must provide charity number and financial year end')
+                flash(
+                    'Must provide charity number and financial year end',
+                    'error'
+                )
+                return redirect(request.url)
+
         charity["fye"] = datetime.datetime.strptime(charity['fye'], '%Y-%m-%d')
 
         id = "{}-{:%Y%m%d}".format(charity['regno'], charity['fye'])
@@ -164,11 +198,12 @@ def doc_upload():
             id=id,
             body={
                 "filename": filename,
-                "filedata": base64.b64encode(doc.read()).decode('utf8'),
+                "filedata": base64.b64encode(content).decode('utf8'),
                 **charity
             },
             pipeline=current_app.config.get('ES_PIPELINE'),
         )
-        flash('Uploaded "{}"'.format(filename))
-        return redirect(url_for('main.doc_get', id=id))
+        flash('Uploaded "{}"'.format(filename), 'message')
+        return redirect(url_for('doc.doc_get', id=id))
+
     return render_template('doc_upload.html')

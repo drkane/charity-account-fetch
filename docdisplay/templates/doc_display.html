@@ -1,3 +1,4 @@
+{% from '_search.html' import search %}
 {% extends "base.html" %}
 
 
@@ -9,16 +10,25 @@
 {% set doc_pdf_url = url_for("doc.doc_get_pdf", id=id) %}
 
 {% block content %}
-<div class="w-20-l fl-l pr4-l">
-    <h2>Document {{id}}</h2>
-    <p>Charity: <a href='{{ url_for("charity.charity_get", regno=result.regno) }}'>{{result.regno}}</a></p>
-    <form>
-        <input type="search" name="q" value="{{ highlight or ''}}" class="pa1" />
-        <input type="submit" value="Search this doc" />
-        <input type="submit" value="Search all docs" formaction="{{url_for('doc.doc_search', q=highlight)}}" />
+<div class="w-20-l fl-l pr4-l pb3">
+    <h2>Document <code>{{id}}</code></h2>
+    <p>Charity: <a href='{{ url_for("charity.charity_get", regno=result.regno) }}' class="link blue b">{{result.regno}}</a></p>
+    <p>Financial year end: <span class="b">{{result.fye[0:10]|dateformat(o='%d %B %Y')}}</span></p>
+    <form class="">
+        {% call search(highlight, '', 'Search this doc') %}
+        {# <input type="search" name="q" value="{{ highlight or ''}}" class="pa1" />
+        <input type="submit" value="Search this doc" /> #}
+        <input class="f4 f3-l button-reset br bt bb bl-0 b--black-20 fl pv3 tc bg-animate bg-yellow dim near-black pointer w-100 w-25-m w-20-l br2-ns br--right-ns"
+            type="submit"
+            value="Search all docs"
+            name=""
+            formaction="{{url_for('doc.doc_search', q=highlight)}}"
+            placeholder="">
+        {% endcall %}
     </form>
-    {% if highlight_count %}
+    {% if highlight %}
     <div class="ma0 pa0 f5">
+        {% if highlight_count %}
         <p>Showing match <span id='currentMatch'>1</span> of <span class="">{{highlight_count}}</span></p>
         <p class="f6 flex justify-between mw5">
             <a href="#first-match" class="move-to-match" id='move-to-first'>&laquo; First</a>
@@ -32,12 +42,10 @@
             <a href="#next-match" class="move-to-match" id='move-to-next'>&rsaquo; Next</a>
             <a href="#last-match" class="move-to-match" id='move-to-last'>&raquo; Last</a>
         </p>
+        {% else %}
+        <p>No matches found</p>
+        {% endif %}
     </div>
-    {#<ul>
-    {% for i in range(highlight_count) %}
-        <li><a href="#match-{{i+1}}" class="move-to-match">Match {{i+1}}</a></li>
-    {% endfor %}
-    </ul>#}
     {% endif %}
 </div>
 <div class="w-100 w-40-l fl-l mb2">
