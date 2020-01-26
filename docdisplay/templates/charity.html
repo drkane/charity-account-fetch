@@ -1,14 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
     <h2>Charity {{regno}}</h2>
-    <p>Accounts:</p>
     {% if results %}
+    <p>Accounts:</p>
     <ul class="">
         {% for r in results %}
         <li>
             <a href="{{ url_for('charity.charity_get', regno=regno) }}">
-                {{"{:%Y-%m-%d}".format(r.fyend)}} [{{ r.size|filesizeformat }}]
+                {{"{:%Y-%m-%d}".format(r.fyend)-}}
             </a>
+            [{{ r.size|filesizeformat }}]
         </li>
         {% endfor %}
     </ul>

@@ -1,9 +1,9 @@
+{% from '_search.html' import search %}
 {% extends "base.html" %}
 {% block content %}
     <h2>Search for a charity</h2>
     <form>
-        <input class="" value="{{q}}" name="q" />
-        <input type='submit' class="" value="Search" name="q" />
+        {{ search(q, 'Charity') }}
     </form>
     {% if results %}
     <p>Results:</p>
