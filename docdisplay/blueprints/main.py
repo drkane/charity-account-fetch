@@ -1,6 +1,8 @@
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, current_app
 import requests
 import requests_cache
+
+from docdisplay.db import get_db
 
 requests_cache.install_cache('demo_cache')
 
@@ -18,9 +20,27 @@ def charity_search():
         'pageNumber': 1,
         'contextId': 1126,
     }
-    r = requests.get(CC_URL, params=cc_params)
+    results = []
+    if cc_params["searchText"]:
+        r = requests.get(CC_URL, params=cc_params)
+        results = r.json().get('pageItems', [])
     return render_template(
         'charitysearch.html',
-        results=r.json().get('pageItems', []),
+        results=results,
         q=request.args.get('q', '')
     )
+
+
+@bp.route('/')
+def index():
+    es = get_db()
+    count = es.count(
+        index=current_app.config.get('ES_INDEX'),
+        doc_type='_doc',
+        body={
+            "query": {
+                "match_all": {}
+            }
+        }
+    )
+    return render_template('index.html', docs=count.get('count', 0))

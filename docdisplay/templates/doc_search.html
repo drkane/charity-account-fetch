@@ -1,12 +1,12 @@
+{% from '_search.html' import search %}
 {% extends "base.html" %}
 {% block content %}
     <h2>Search within documents</h2>
     <form>
-        <input class="" value="{{q or ''}}" name="q" />
-        <input type='submit' class="" value="Search" name="submit" />
+        {{ search(q, 'Term to find in document') }}
     </form>
-    <p>{{resultCount}} results:</p>
     {% if results %}
+    <p>{{resultCount}} results:</p>
     <ul class="list ma0 pa0">
         {% for r in results %}
         <li class="">

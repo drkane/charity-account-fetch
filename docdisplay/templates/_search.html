@@ -1,0 +1,16 @@
+{% macro search(q, placeholder) %}
+<div class="cf mt3 flex">
+    <input class="f6 f5-l input-reset bl bt bb br-0 b--black-20 fl near-black bg-white pa3 lh-solid w-100 w-75-m w-80-l br2-ns br--left-ns"
+           type="text"
+           value="{{ q or '' }}"
+           name="q"
+           id="q"
+           placeholder="{{ placeholder or '' }}">
+    <input class="f6 f5-l button-reset br bt bb bl-0 b--black-20 fl pv3 tc bg-animate bg-yellow dim near-black pointer w-100 w-25-m w-20-l br2-ns br--right-ns"
+           type="submit"
+           value="Search"
+           name=""
+           id="search_button"
+           placeholder="">
+</div>
+{% endmacro %}

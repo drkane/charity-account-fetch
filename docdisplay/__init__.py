@@ -44,8 +44,4 @@ def create_app(test_config=None):
     def highlight_filter(s, q):
         return add_highlights(s, q)[0]
 
-    @app.route('/')
-    def index():
-        return None
-
     return app

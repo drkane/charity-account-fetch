@@ -1,14 +1,17 @@
 {% extends "base.html" %}
+
+{% set input_style = 'f6 f5-l input-reset ba bw1 b--black-20 db cf near-black bg-white pa2 lh-solid w5 br2-ns' %}
+
 {% block content %}
     <h2>Upload a document</h2>
     <form method="post" enctype="multipart/form-data">
-        <label class="db w-100 mb4 b">Charity number: <input class="db cf pa1 ba bw1 b--gray" type='text' name='regno' /></label>
-        <label class="db w-100 mb4 b">Charity name: <input class="db cf pa1 ba bw1 b--gray" type='text' name='name' /></label>
-        <label class="db w-100 mb4 b">Financial year end: <input class="db cf pa1 ba bw1 b--gray" type='date' name='fye' /></label>
-        <label class="db w-100 mb4 b">Income: <input class="db cf pa1 ba bw1 b--gray tr" type='number' name='income' /></label>
-        <label class="db w-100 mb4 b">Spending: <input class="db cf pa1 ba bw1 b--gray tr" type='number' name='spending' /></label>
-        <label class="db w-100 mb4 b">Total assets: <input class="db cf pa1 ba bw1 b--gray tr" type='number' name='assets' /></label>
-        <input class="" type='file' name='doc' />
-        <input class="" type='submit' value='Upload doc' />
+        <label class="db w-100 mt4 b">Charity number: </label><input class="{{ input_style }}" type='text' name='regno' />
+        <label class="db w-100 mt4 b">Charity name: </label><input class="{{ input_style }}" type='text' name='name' />
+        <label class="db w-100 mt4 b">Financial year end: </label><input class="{{ input_style }}" type='date' name='fye' />
+        <label class="db w-100 mt4 b">Income: </label><input class="{{ input_style }} tr" type='number' name='income' />
+        <label class="db w-100 mt4 b">Spending: </label><input class="{{ input_style }} tr" type='number' name='spending' />
+        <label class="db w-100 mt4 b">Total assets: </label><input class="{{ input_style }} tr" type='number' name='assets' />
+        <input class="mt4 db cf" type='file' name='doc' />
+        <input class="mt4 f5 f4-l button-reset fl pa3 no-underline tc bn bg-animate bg-yellow dim near-black pointer br2-ns" type='submit' value='Upload doc' />
     </form>
 {% endblock content %}

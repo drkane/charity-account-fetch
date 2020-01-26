@@ -5,7 +5,11 @@
     {% if results %}
     <ul class="">
         {% for r in results %}
-        <li><a href="{{ url_for('charity.charity_get', regno=regno) }}">{{"{:%Y-%m-%d}".format(r.fyend)}} [{{ r.size }}]</a></li>
+        <li>
+            <a href="{{ url_for('charity.charity_get', regno=regno) }}">
+                {{"{:%Y-%m-%d}".format(r.fyend)}} [{{ r.size|filesizeformat }}]
+            </a>
+        </li>
         {% endfor %}
     </ul>
     {% endif %}

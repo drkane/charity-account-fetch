@@ -1,0 +1,38 @@
+{% from '_search.html' import search %}
+{% extends "base.html" %}
+{% block content %}
+    <ul class="list ma0 pa0 f4">
+        <li class="mb5 db">
+            <h3 class="ma0 pa0">
+                <a href="{{url_for('doc.doc_search')}}" class="link underline-hover near-black">
+                    Search in documents
+                </a>
+            </h3>
+            {% if docs %}
+            <p class="f4 gray ma0 pa0">
+                {{ "{:,.0f}".format(docs) }} documents available
+            </p>
+            {% endif %}
+            <form action="{{url_for('doc.doc_search')}}">
+                {{ search(q, 'Term to find in document') }}
+            </form>
+        </li>
+        <li class="mb5 db">
+            <h3 class="ma0 pa0">
+                <a href="{{url_for('main.charity_search')}}" class="link underline-hover near-black">
+                    Search charities
+                </a>
+            </h3>
+            <form action="{{url_for('main.charity_search')}}">
+                {{ search(q, 'Search charities') }}
+            </form>
+        </li>
+        <li class="mb5 db">
+            <h3 class="ma0 pa0">
+                <a href="{{url_for('doc.doc_upload')}}" class="link underline blue glow">
+                    Upload a new document
+                </a>
+            </h3>
+        </li>
+    </ul>
+{% endblock content %}

@@ -13,8 +13,9 @@
     <h2>Document {{id}}</h2>
     <p>Charity: <a href='{{ url_for("charity.charity_get", regno=result.regno) }}'>{{result.regno}}</a></p>
     <form>
-        <input type="search" name="highlight" value="{{ highlight or ''}}" class="pa1" />
-        <input type="submit" value="Search" />
+        <input type="search" name="q" value="{{ highlight or ''}}" class="pa1" />
+        <input type="submit" value="Search this doc" />
+        <input type="submit" value="Search all docs" formaction="{{url_for('doc.doc_search', q=highlight)}}" />
     </form>
     {% if highlight_count %}
     <div class="ma0 pa0 f5">

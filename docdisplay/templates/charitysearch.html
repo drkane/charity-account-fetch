@@ -5,8 +5,8 @@
         <input class="" value="{{q}}" name="q" />
         <input type='submit' class="" value="Search" name="q" />
     </form>
-    <p>Results:</p>
     {% if results %}
+    <p>Results:</p>
     <ul class="">
         {% for r in results %}
         <li><a href="{{ url_for('charity.charity_get', regno=r.regNo) }}">{{r.name}} [{{r.regNo}}]</a></li>
