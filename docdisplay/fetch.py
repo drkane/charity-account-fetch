@@ -9,7 +9,7 @@ import requests_cache
 from bs4 import BeautifulSoup
 import dateutil.parser
 
-from utils import filesize_text_to_int, parse_datetime
+from docdisplay.utils import filesize_text_to_int, parse_datetime
 
 
 def print_header(s: str, underline: str = "="):
