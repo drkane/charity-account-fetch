@@ -44,7 +44,7 @@ def doc_get(id):
         id=id,
         _source_excludes=['filedata'],
     )
-    highlight = request.args.get('highlight')
+    highlight = request.args.get('q')
     _, highlight_count = add_highlights(
         doc.get('_source', {}).get('attachment', {}).get('content', ''),
         q=highlight
@@ -53,7 +53,7 @@ def doc_get(id):
         'doc_display.html',
         result=doc.get('_source'),
         id=id,
-        highlight=request.args.get('highlight'),
+        highlight=highlight,
         highlight_count=highlight_count,
     )
 
@@ -67,7 +67,7 @@ def doc_get_embed(id):
         id=id,
         _source_excludes=['filedata'],
     )
-    highlight = request.args.get('highlight')
+    highlight = request.args.get('q')
     content, highlight_count = add_highlights(
         doc.get('_source', {}).get('attachment', {}).get('content', ''),
         q=highlight
@@ -76,7 +76,7 @@ def doc_get_embed(id):
         'doc_display_embed.html',
         content=content,
         id=id,
-        highlight=request.args.get('highlight'),
+        highlight=highlight,
     )
 
 
@@ -97,6 +97,7 @@ def doc_search():
                     "fields": {
                         "attachment.content": {
                             "fragment_size": 150,
+                            "number_of_fragments": 3,
                             "pre_tags": ['<em class="bg-yellow b">'],
                             "post_tags": ['</em>'],
                         }
@@ -115,27 +116,6 @@ def doc_search():
         q=q,
         resultCount=resultCount,
     )
-
-
-def find_snippets(results, q):
-    for r in results:
-        content = r.get("_source", {}).get(
-            "attachment", {}).get("content", "").splitlines()
-        r["snippets"] = []
-        for i, l in enumerate(content):
-            if q.lower() in l.lower():
-                snippet = []
-                if i-2 > 0:
-                    snippet.append(content[i-2])
-                if i-1 >= 0:
-                    snippet.append(content[i-1])
-                snippet.append(content[i])
-                if i+1 < len(content):
-                    snippet.append(content[i+1])
-                if i+2 < len(content):
-                    snippet.append(content[i+2])
-                r["snippets"].append("\r\n".join(snippet))
-    return results
 
 
 @bp.route('/upload', methods=['GET', 'POST'])

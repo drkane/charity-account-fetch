@@ -7,12 +7,18 @@
     </form>
     <p>{{resultCount}} results:</p>
     {% if results %}
-    <ul class="">
+    <ul class="list ma0 pa0">
         {% for r in results %}
-        <li>
-            <a href="{{ url_for('doc.doc_get', id=r._id, highlight=q) }}">{{r._id}}</a>
+        <li class="">
+            <a href="{{ url_for('doc.doc_get', id=r._id, q=q) }}">
+            {% if r._source.regno and r._source.fye %}
+                {{r._source.regno }} ({{ r._source.fye[0:10] }})
+            {% else %}
+                {{r._id}}
+            {% endif %}
+            </a>
             {% for s in r.highlight["attachment.content"] %}
-            <pre class="pa2 bg-washed-yellow b--gray bw1 bn f5 sans-serif base-font mh0 mt0 mb2">{{s|safe}}</pre>
+            <pre class="pa2 bg-washed-yellow b--gray bw1 bn f6 sans-serif base-font mh0 mt0 mb2">{{s|safe}}</pre>
             {% endfor %}
         </li>
         {% endfor %}

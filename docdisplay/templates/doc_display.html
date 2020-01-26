@@ -2,7 +2,7 @@
 
 
 {% if highlight_count > 0 %}
-{% set doc_content_url = url_for("doc.doc_get_embed", id=id, highlight=highlight, _anchor="match-1") %}
+{% set doc_content_url = url_for("doc.doc_get_embed", id=id, q=highlight, _anchor="match-1") %}
 {% else %}
 {% set doc_content_url = url_for("doc.doc_get_embed", id=id) %}
 {% endif %}
