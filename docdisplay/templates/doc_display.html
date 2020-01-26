@@ -11,7 +11,7 @@
 {% block content %}
 <div class="w-20-l fl-l pr4-l">
     <h2>Document {{id}}</h2>
-    <p>Charity: <a href='{{ url_for("main.charity_get", regno=result.regno) }}'>{{result.regno}}</a></p>
+    <p>Charity: <a href='{{ url_for("charity.charity_get", regno=result.regno) }}'>{{result.regno}}</a></p>
     <form>
         <input type="search" name="highlight" value="{{ highlight or ''}}" class="pa1" />
         <input type="submit" value="Search" />

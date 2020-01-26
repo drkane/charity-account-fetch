@@ -9,34 +9,12 @@ import requests_cache
 from bs4 import BeautifulSoup
 import dateutil.parser
 
+from utils import filesize_text_to_int, parse_datetime
+
 
 def print_header(s: str, underline: str = "="):
     print(s)
     print(underline * len(s))
-
-
-def filesize_text_to_int(filesize: str) -> int:
-    """
-    Convert file size text to an int
-
-    Sizes are generally in the format "(12,345KB)"
-    """
-    filesize = filesize.replace("(", "")\
-                       .replace(")", "")\
-                       .replace(",", "")\
-                       .upper()
-    if "KB" in filesize:
-        return int(filesize.replace("KB", "")) * 1024
-    elif "KIB" in filesize:
-        return int(filesize.replace("KIB", "")) * 1000
-    return int(filesize)
-
-
-def parse_datetime(d: str, f: str = "%Y-%m-%d") -> date:
-    """
-    Parse a date from a string
-    """
-    return datetime.strptime(d, f).date()
 
 
 def ccew_list_accounts(regno: str) -> list:

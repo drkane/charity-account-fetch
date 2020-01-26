@@ -1,4 +1,5 @@
 import re
+from datetime import date, datetime
 
 
 class HighlightNumbers(object):
@@ -25,3 +26,27 @@ def add_highlights(s, q):
         flags=re.IGNORECASE
     )
     return (s, h.count)
+
+
+def filesize_text_to_int(filesize: str) -> int:
+    """
+    Convert file size text to an int
+
+    Sizes are generally in the format "(12,345KB)"
+    """
+    filesize = filesize.replace("(", "")\
+                       .replace(")", "")\
+                       .replace(",", "")\
+                       .upper()
+    if "KB" in filesize:
+        return int(filesize.replace("KB", "")) * 1024
+    elif "KIB" in filesize:
+        return int(filesize.replace("KIB", "")) * 1000
+    return int(filesize)
+
+
+def parse_datetime(d: str, f: str = "%Y-%m-%d") -> date:
+    """
+    Parse a date from a string
+    """
+    return datetime.strptime(d, f).date()
