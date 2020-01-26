@@ -45,7 +45,14 @@ def doc_get(id):
         id=id,
         _source_excludes=['filedata'],
     )
-    return render_template('doc_display.html', result=doc.get('_source'), id=id)
+    return render_template(
+        'doc_display_embed.html',
+        result=doc.get('_source'),
+        id=id,
+        highlight=request.args.get('highlight'),
+    )
+
+# def add_highlights(doc, q):
 
 
 @bp.route('/search')
@@ -60,21 +67,23 @@ def doc_search():
             doc_type='_doc',
             q=request.args.get('q'),
             _source_excludes=['filedata'],
-            body=dict(highlight={
-                "fields" : {
-                    "attachment.content" : {
-                        "fragment_size" : 150,
-                        "pre_tags": ['<em class="bg-yellow b">'],
-                        "post_tags": ['</em>'],
-                        "encoder": 'html',
-                    }
+            body=dict(
+                highlight={
+                    "fields" : {
+                        "attachment.content" : {
+                            "fragment_size" : 150,
+                            "pre_tags": ['<em class="bg-yellow b">'],
+                            "post_tags": ['</em>'],
+                        }
+                    },
+                    "encoder": 'html',
                 }
-            }
             )
         )
         resultCount = doc.get('hits', {}).get('total', 0)
         if isinstance(resultCount, dict):
             resultCount = resultCount.get('value')
+        results = doc.get('hits', {}).get('hits', [])
     return render_template(
         'doc_search.html',
         results=results,

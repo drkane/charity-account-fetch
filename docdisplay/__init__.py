@@ -5,8 +5,19 @@ import re
 from flask import Flask
 
 from . import db
-from . import main
-from . import doc
+from . import blueprints as bp
+
+class HighlightNumbers(object):
+    def __init__(self, start=1):
+        self.count = start - 1
+
+    def __call__(self, match):
+        self.count += 1
+        return '<span class="bg-yellow" id="match-{}">{}</span>'.format(
+            self.count,
+            match.group(1)
+        )
+
 
 def create_app(test_config=None):
     # create and configure the app
@@ -32,8 +43,7 @@ def create_app(test_config=None):
         pass
     
     db.init_app(app)
-    app.register_blueprint(main.bp)
-    app.register_blueprint(doc.bp)
+    bp.init_app(app)
 
     @app.context_processor
     def inject_now():
@@ -44,12 +54,8 @@ def create_app(test_config=None):
     @app.template_filter('highlight')
     def highlight_filter(s, q):
         qs = q.split()
-        s = re.sub(
-            r'({})'.format("|".join(qs)),
-            r'<span class="bg-yellow">\g<1></span>',
-            s,
-            flags=re.IGNORECASE
-        )
+        h = HighlightNumbers()
+        s = re.sub(r'({})'.format("|".join(qs)), h, s, flags=re.IGNORECASE)
         return s
 
 

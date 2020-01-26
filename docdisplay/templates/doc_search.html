@@ -3,16 +3,16 @@
     <h2>Search within documents</h2>
     <form>
         <input class="" value="{{q or ''}}" name="q" />
-        <input type='submit' class="" value="Search" name="q" />
+        <input type='submit' class="" value="Search" name="submit" />
     </form>
     <p>{{resultCount}} results:</p>
     {% if results %}
     <ul class="">
         {% for r in results %}
         <li>
-            <a href="{{ url_for('doc.doc_get', id=r._id) }}">{{r._id}}</a>
+            <a href="{{ url_for('doc.doc_get', id=r._id, highlight=q) }}">{{r._id}}</a>
             {% for s in r.highlight["attachment.content"] %}
-            <pre class="pa2 bg-washed-yellow b--gray bw1 ba f5 sans-serif base-font mh0 mt0 mb2">{{s|safe}}</pre>
+            <pre class="pa2 bg-washed-yellow b--gray bw1 bn f5 sans-serif base-font mh0 mt0 mb2">{{s|safe}}</pre>
             {% endfor %}
         </li>
         {% endfor %}
