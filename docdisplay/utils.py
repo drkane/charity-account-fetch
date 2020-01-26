@@ -1,5 +1,6 @@
 import re
 
+
 class HighlightNumbers(object):
     def __init__(self, start=1):
         self.count = start - 1
@@ -10,6 +11,7 @@ class HighlightNumbers(object):
             self.count,
             match.group(1)
         )
+
 
 def add_highlights(s, q):
     if not q:

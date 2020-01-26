@@ -13,7 +13,7 @@ def get_db():
 
 
 def close_db(e=None):
-    es = g.pop('es', None)
+    g.pop('es', None)
 
 
 def init_db():
@@ -23,11 +23,11 @@ def init_db():
     es.ingest.put_pipeline(
         current_app.config['ES_PIPELINE'],
         body={
-            "description" : "Store account documents",
-            "processors" : [
+            "description": "Store account documents",
+            "processors": [
                 {
-                    "attachment" : {
-                        "field" : "filedata"
+                    "attachment": {
+                        "field": "filedata"
                     }
                 }
             ]

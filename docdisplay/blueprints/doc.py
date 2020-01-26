@@ -2,16 +2,14 @@ import base64
 import re
 import datetime
 
-from flask import Blueprint, render_template, jsonify, current_app, request, flash, redirect, url_for, make_response
+from flask import (
+    Blueprint, render_template, current_app, request,
+    flash, redirect, url_for, make_response
+)
 from werkzeug.utils import secure_filename
-import requests
-import requests_cache
 
 from docdisplay.db import get_db
-from docdisplay.fetch import ccew_list_accounts
 from docdisplay.utils import add_highlights
-
-requests_cache.install_cache('demo_cache')
 
 CC_ACCOUNT_FILENAME = r'([0-9]+)_AC_([0-9]{4})([0-9]{2})([0-9]{2})_E_C.PDF'
 
@@ -96,9 +94,9 @@ def doc_search():
             _source_excludes=['filedata'],
             body=dict(
                 highlight={
-                    "fields" : {
-                        "attachment.content" : {
-                            "fragment_size" : 150,
+                    "fields": {
+                        "attachment.content": {
+                            "fragment_size": 150,
                             "pre_tags": ['<em class="bg-yellow b">'],
                             "post_tags": ['</em>'],
                         }
@@ -118,9 +116,11 @@ def doc_search():
         resultCount=resultCount,
     )
 
+
 def find_snippets(results, q):
     for r in results:
-        content = r.get("_source",{}).get("attachment", {}).get("content", "").splitlines()
+        content = r.get("_source", {}).get(
+            "attachment", {}).get("content", "").splitlines()
         r["snippets"] = []
         for i, l in enumerate(content):
             if q.lower() in l.lower():
@@ -141,7 +141,7 @@ def find_snippets(results, q):
 @bp.route('/upload', methods=['GET', 'POST'])
 def doc_upload():
     es = get_db()
-    if request.method=='POST':
+    if request.method == 'POST':
 
         # check file is provided
         doc = request.files.get('doc')
@@ -178,7 +178,7 @@ def doc_upload():
         charity["fye"] = datetime.datetime.strptime(charity['fye'], '%Y-%m-%d')
 
         id = "{}-{:%Y%m%d}".format(charity['regno'], charity['fye'])
-        result = es.index(
+        _ = es.index(
             index=current_app.config.get('ES_INDEX'),
             doc_type='_doc',
             id=id,

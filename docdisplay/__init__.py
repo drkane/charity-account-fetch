@@ -30,7 +30,7 @@ def create_app(test_config=None):
         os.makedirs(app.instance_path)
     except OSError:
         pass
-    
+
     db.init_app(app)
     bp.init_app(app)
 
@@ -43,7 +43,6 @@ def create_app(test_config=None):
     @app.template_filter('highlight')
     def highlight_filter(s, q):
         return add_highlights(s, q)[0]
-
 
     @app.route('/')
     def index():
