@@ -20,14 +20,16 @@
                 <td class="tr ph3">£{{ '{:,.0f}'.format(r.income) }}</td>
                 <td class="tr ph3">£{{ '{:,.0f}'.format(r.spending) }}</td>
                 <td>
-                    {% if r.url %}
+                    {% if r.doc_id %}
+                    <a href="{{url_for('doc.doc_get', id=r.doc_id)}}" class="link pointer blue underline-hover">View document</a>
+                    {% elif r.url %}
                     <form action="{{ url_for('doc.doc_upload')}}" method="POST">
                         <input type="hidden" class="dn" name="regno" value="{{regno}}" />
                         <input type="hidden" class="dn" name="url" value="{{r.url}}" />
                         <input type="hidden" class="dn" name="fye" value="{{ '{:%Y-%m-%d}'.format(r.fyend) }}" />
                         <input type="hidden" class="dn" name="income" value="{{ r.income }}" />
                         <input type="hidden" class="dn" name="spending" value="{{ r.spending }}" />
-                        <button type="submit" class="link button-research bn pa0 ma0 bg-inherit pointer blue underline-hover">
+                        <button type="submit" class="link button-reset base-font bn pa0 ma0 bg-inherit pointer blue underline-hover">
                             Import PDF
                         </button>
                         [{{ r.size|filesizeformat }}]

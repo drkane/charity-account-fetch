@@ -4,6 +4,7 @@ import math
 from flask import Blueprint, render_template, current_app, request, url_for
 from graphqlclient import GraphQLClient
 
+from docdisplay.db import get_db
 from docdisplay.fetch import ccew_list_accounts
 
 CC_ACCOUNT_FILENAME = r'([0-9]+)_AC_([0-9]{4})([0-9]{2})([0-9]{2})_E_C.PDF'
@@ -131,6 +132,25 @@ def charity_search():
 
 @bp.route('/<regno>')
 def charity_get(regno):
+    es = get_db()
+    documents = es.search(
+        index=current_app.config.get('ES_INDEX'),
+        doc_type='_doc',
+        _source_includes=['regno', 'fye'],
+        body={
+            "query": {
+                "term": {
+                    "regno": regno
+                }
+            }
+        }
+    )
+    documents = {
+        d["_source"]["fye"][0:10]: {"doc_id": d.get("_id")}
+        for d in documents.get('hits', {}).get("hits", [])
+        if d.get("_source", {}).get("fye")
+    }
+
     accounts = ccew_list_accounts(regno)
     accounts = {
         "{:%Y-%m-%d}".format(a['fyend']): a
@@ -140,7 +160,8 @@ def charity_get(regno):
     charity['finances'] = [
         {
             **f,
-            **accounts.get(f['financialYear']['end'][0:10], {})
+            **accounts.get(f['financialYear']['end'][0:10], {}),
+            **documents.get(f['financialYear']['end'][0:10], {})
         }
         for f in charity['finances']
     ]
