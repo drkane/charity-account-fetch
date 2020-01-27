@@ -19,11 +19,11 @@
         </li>
         <li class="mb5 db">
             <h3 class="ma0 pa0">
-                <a href="{{url_for('main.charity_search')}}" class="link underline-hover near-black">
+                <a href="{{url_for('charity.charity_search')}}" class="link underline-hover near-black">
                     Search charities
                 </a>
             </h3>
-            <form action="{{url_for('main.charity_search')}}">
+            <form action="{{url_for('charity.charity_search')}}">
                 {{ search(q, 'Search charities', 'Search charities') }}
             </form>
         </li>

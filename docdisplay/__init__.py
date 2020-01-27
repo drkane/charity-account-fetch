@@ -16,6 +16,11 @@ def create_app(test_config=None):
         ES_URL=os.environ.get('ES_URL'),
         ES_INDEX='charityaccounts',
         ES_PIPELINE='accounts',
+        CHARITYBASE_API_URL=os.environ.get(
+            'CHARITYBASE_API_URL',
+            'https://charitybase.uk/api/graphql'
+        ),
+        CHARITYBASE_API_KEY=os.environ.get('CHARITYBASE_API_KEY'),
     )
 
     if test_config is None:
