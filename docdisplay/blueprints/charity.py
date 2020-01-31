@@ -131,7 +131,8 @@ def charity_search():
 
 
 @bp.route('/<regno>')
-def charity_get(regno):
+@bp.route('/<regno>.<filetype>')
+def charity_get(regno, filetype='html'):
     es = get_db()
     documents = es.search(
         index=current_app.config.get('ES_INDEX'),
@@ -146,7 +147,10 @@ def charity_get(regno):
         }
     )
     documents = {
-        d["_source"]["fye"][0:10]: {"doc_id": d.get("_id")}
+        d["_source"]["fye"][0:10]: {
+            "doc_id": d.get("_id"),
+            "doc_url": url_for('doc.doc_get', id=d.get('_id'))
+        }
         for d in documents.get('hits', {}).get("hits", [])
         if d.get("_source", {}).get("fye")
     }
@@ -161,10 +165,20 @@ def charity_get(regno):
         {
             **f,
             **accounts.get(f['financialYear']['end'][0:10], {}),
-            **documents.get(f['financialYear']['end'][0:10], {})
+            **documents.get(f['financialYear']['end'][0:10], {}),
+            'fyend': f['financialYear']['end'][0:10],
         }
         for f in charity['finances']
     ]
+    if filetype == 'json':
+        return {
+            'data': dict(
+                results=accounts,
+                charity=charity,
+                regno=regno
+            ),
+            'errors': []
+        }
     return render_template(
         'charity.html',
         results=accounts,

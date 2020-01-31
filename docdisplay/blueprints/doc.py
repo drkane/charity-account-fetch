@@ -4,7 +4,7 @@ import datetime
 
 from flask import (
     Blueprint, render_template, current_app, request,
-    flash, redirect, url_for, make_response
+    flash, redirect, url_for, make_response, jsonify
 )
 from werkzeug.utils import secure_filename
 import requests
@@ -122,8 +122,16 @@ def doc_search():
     )
 
 
+@bp.route('/bulkupload')
+def doc_upload_bulk():
+    return render_template('doc_upload_bulk.html')
+
+
 @bp.route('/upload', methods=['GET', 'POST'])
-def doc_upload():
+@bp.route('/upload.<filetype>', methods=['GET', 'POST'])
+def doc_upload(filetype='html'):
+    if filetype not in ['json', 'html']:
+        filetype = 'html'
     es = get_db()
     if request.method == 'POST':
 
@@ -144,6 +152,11 @@ def doc_upload():
             r = requests.get(url)
             if not r.status_code == requests.codes.ok:
                 flash("Couldn't load from URL: {}".format(url), 'error')
+                if filetype == 'json':
+                    return jsonify({
+                        'data': {},
+                        'errors': ["Couldn't load from URL: {}".format(url)],
+                    })
                 return redirect(request.url)
             content = r.content
             filename = url
@@ -157,6 +170,11 @@ def doc_upload():
 
         else:
             flash('No file found', 'error')
+            if filetype == 'json':
+                return jsonify({
+                    'data': {},
+                    'errors': ['No file found'],
+                })
             return redirect(request.url)
 
         # check the filename
@@ -187,12 +205,20 @@ def doc_upload():
                     'Must provide charity number and financial year end',
                     'error'
                 )
+                if filetype == 'json':
+                    return jsonify({
+                        'data': {},
+                        'errors': [
+                            ('Must provide charity number ' +
+                             ' and financial year end')
+                        ],
+                    })
                 return redirect(request.url)
 
         charity["fye"] = datetime.datetime.strptime(charity['fye'], '%Y-%m-%d')
 
         id = "{}-{:%Y%m%d}".format(charity['regno'], charity['fye'])
-        _ = es.index(
+        result = es.index(
             index=current_app.config.get('ES_INDEX'),
             doc_type='_doc',
             id=id,
@@ -204,6 +230,14 @@ def doc_upload():
             pipeline=current_app.config.get('ES_PIPELINE'),
         )
         flash('Uploaded "{}"'.format(filename), 'message')
+        if filetype == 'json':
+            return jsonify({
+                'data': {
+                    'id': result.get('_id'),
+                    'result': result.get('result'),
+                },
+                'errors': [],
+            })
         return redirect(url_for('doc.doc_get', id=id))
 
     return render_template('doc_upload.html')
