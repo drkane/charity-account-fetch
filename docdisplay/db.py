@@ -20,19 +20,6 @@ def init_db():
     es = get_db()
     if not es.indices.exists(index=current_app.config['ES_INDEX']):
         es.indices.create(index=current_app.config['ES_INDEX'])
-    es.ingest.put_pipeline(
-        current_app.config['ES_PIPELINE'],
-        body={
-            "description": "Store account documents",
-            "processors": [
-                {
-                    "attachment": {
-                        "field": "filedata"
-                    }
-                }
-            ]
-        }
-    )
 
 
 def init_app(app):

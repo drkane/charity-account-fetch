@@ -12,6 +12,7 @@ import requests_cache
 
 from docdisplay.db import get_db
 from docdisplay.utils import add_highlights
+from docdisplay.upload import upload_doc
 
 requests_cache.install_cache('demo_cache')
 
@@ -217,17 +218,10 @@ def doc_upload(filetype='html'):
 
         charity["fye"] = datetime.datetime.strptime(charity['fye'], '%Y-%m-%d')
 
-        id = "{}-{:%Y%m%d}".format(charity['regno'], charity['fye'])
-        result = es.index(
-            index=current_app.config.get('ES_INDEX'),
-            doc_type='_doc',
-            id=id,
-            body={
-                "filename": filename,
-                "filedata": base64.b64encode(content).decode('utf8'),
-                **charity
-            },
-            pipeline=current_app.config.get('ES_PIPELINE'),
+        result = upload_doc(
+            charity,
+            content,
+            es
         )
         flash('Uploaded "{}"'.format(filename), 'message')
         if filetype == 'json':
@@ -238,6 +232,6 @@ def doc_upload(filetype='html'):
                 },
                 'errors': [],
             })
-        return redirect(url_for('doc.doc_get', id=id))
+        return redirect(url_for('doc.doc_get', id=result.get('_id')))
 
     return render_template('doc_upload.html')
