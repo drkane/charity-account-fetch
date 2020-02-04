@@ -13,7 +13,7 @@ def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
         SECRET_KEY='dev',
-        ES_URL=os.environ.get('ES_URL'),
+        ES_URL=os.environ.get('ELASTICSEARCH_URL'),
         ES_INDEX='charityaccounts',
         CHARITYBASE_API_URL=os.environ.get(
             'CHARITYBASE_API_URL',
