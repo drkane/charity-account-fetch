@@ -60,7 +60,16 @@ ES_URL=http://localhost:9200/
 CHARITYBASE_API_KEY=insert_key_here
 ```
 
-### Step 6 - run the app
+### Step 6 - initialise the elasticsearch index
+
+```sh
+flask init-db
+```
+
+This will create an index called `charityaccounts`. You can check it exists after this by 
+visiting <http://localhost:9200/charityaccounts>.
+
+### Step 7 - run the app
 
 ```sh
 flask run
