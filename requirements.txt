@@ -19,7 +19,7 @@ MarkupSafe==1.1.1
 mccabe==0.6.1
 pdfminer.six==20181108
 pdfplumber==0.5.13
-Pillow==6.2.0
+Pillow==7.1.2
 pycodestyle==2.5.0
 pycryptodome==3.9.0
 pyflakes==2.1.1
