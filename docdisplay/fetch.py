@@ -28,6 +28,8 @@ def ccew_list_accounts(regno: str) -> list:
     if getattr(r, "from_cache", False):
         logging.debug("Used cache")
     soup = BeautifulSoup(r.text, 'html.parser')
+    if not soup.find(id="documents"):
+        return []
     accounts = [
         {
             'url': a['href'],

@@ -17,8 +17,8 @@
                 </p>
             </div>
         </div>
-        <div id="bulk-upload" class="flex flex-wrap"></div>
-        {#<div class="flex flex-wrap" id='stage-1'>
+        {# <div id="bulk-upload" class="flex flex-wrap"></div> #}
+        <div class="flex flex-wrap" id='stage-1'>
             <div class="w-100 w-50-l">
                 <label class="db w-100 mt4 b">Upload a CSV file: </label>
                 <input class="mt4 db cf data-input" type='file' name='file' id='file' />
@@ -29,10 +29,7 @@
             </div>
         </div>
         <div class="flex flex-wrap" id="stage-2">
-            <h3 class="ma0 pa0 mt4 w-100">Results</h3>
-            <div class="w-100">
-                <input class="mt4 f5 f4-l button-reset fl pa3 no-underline tc bn bg-animate bg-yellow dim near-black pointer br2-ns" type='submit' id='upload-docs' value='Upload documents' />
-            </div>
+            <h3 class="ma0 pa0 mt4 w-100">Preview</h3>
             <p class="w-100">
                 <span class="b">File source: </span>
                 <span id='file-source' class="code"></span>
@@ -41,19 +38,21 @@
             <table id='' class="table collapse w-100 f6">
                 <thead>
                     <tr>
-                        <th class="pa1 bb b--light-gray bw1 tl">Charity number</th>
-                        <th class="pa1 bb b--light-gray bw1 tl">Charity name</th>
-                        <th class="pa1 bb b--light-gray bw1 tl">Financial year end</th>
-                        <th class="pa1 bb b--light-gray bw1 tr">Income</th>
-                        <th class="pa1 bb b--light-gray bw1 tr">Spending</th>
-                        <th class="pa1 bb b--light-gray bw1 tl">Status</th>
+                        <th class="pa2 bb b--light-gray bw1 tl">Charity number</th>
+                        <th class="pa2 bb b--light-gray bw1 tl">Charity name</th>
+                        <th class="pa2 bb b--light-gray bw1 tl">Financial year end</th>
+                        <th class="pa2 bb b--light-gray bw1 tr">Income</th>
+                        <th class="pa2 bb b--light-gray bw1 tr">Spending</th>
+                        <th class="pa2 bb b--light-gray bw1 tl">Status</th>
                     </tr>
                 </thead>
                 <tbody id='preview-data'>
                 </tbody>
             </table>
+            <div class="w-100">
+                <input class="mt4 f6 f5-l button-reset fl pa3 base-font no-underline tc bn bg-animate bg-yellow dim near-black pointer br2-ns" type='submit' id='upload-docs' value='Fetch documents' />
+            </div>
         </div>
-        #}
     </form>
 {% endblock content %}
 
@@ -61,11 +60,11 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.1.0/papaparse.min.js" 
         integrity="sha256-Fh801SO9gqegfUdkDxyzXzIUPWzO/Vatqj8uN+5xcL4=" 
         crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
+{# <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
 <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
-<script src="{{ url_for('static', filename='js/bulkReact.js') }}" type="text/babel"></script>
-{# <script src="{{ url_for('static', filename='js/bulk.js') }}"></script> #}
+<script src="{{ url_for('static', filename='js/bulkReact.js') }}" type="text/babel"></script> #}
+<script src="{{ url_for('static', filename='js/bulk.js') }}"></script>
 {# <script type='text/javascript'>
 
 </script> #}
