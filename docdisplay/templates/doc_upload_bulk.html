@@ -1,10 +1,11 @@
 {% extends "base.html" %}
 
 {% set input_style = 'f6 f5-l input-reset ba bw1 b--black-20 db cf near-black bg-white pa2 lh-solid w5 br2-ns' %}
+{% set button_style = 'f6 f5-l button-reset fl pa3 base-font no-underline tc bn bg-animate bg-yellow dim near-black pointer br2-ns' %}
 
 {% block content %}
     <h2>Upload a list of documents</h2>
-    <form method="post" enctype="multipart/form-data">
+    <div id='bulk-upload'>
         <div class="flex flex-wrap" id=''>
             <div class="w-100">
                 <p class="ma0 pa0 w-100 measure">
@@ -22,38 +23,50 @@
             <div class="w-100 w-50-l">
                 <label class="db w-100 mt4 b">Upload a CSV file: </label>
                 <input class="mt4 db cf data-input" type='file' name='file' id='file' />
+                {# <button v-on:click="fetchFromFile">Prepare records</button> #}
             </div>
             <div class="w-100 w-50-l">
                 <label class="db w-100 mt4 b">Or paste a list of charities: </label>
-                <textarea class="{{ input_style }} w-100 data-input" rows="8" id='list' placeholder='123456,2020-03-31'></textarea>
+                <textarea class="{{ input_style }} w-100 data-input" rows="8" id='list' placeholder='123456,2020-03-31' v-model="textAreaRecords"></textarea>
+                <button class="mt2 {{ button_style }}" v-on:click.prevent="fetchFromTextArea">Prepare records</button>
             </div>
         </div>
-        <div class="flex flex-wrap" id="stage-2">
+        <div class="flex flex-wrap" id="stage-2" v-if="records.length > 0">
             <h3 class="ma0 pa0 mt4 w-100">Preview</h3>
-            <p class="w-100">
+            {% raw %}
+            <p class="w-100" v-if="source">
                 <span class="b">File source: </span>
-                <span id='file-source' class="code"></span>
-                <span id='file-values'></span>
+                <span id='file-source' class="code">{{ source }}</span>
+                <span id='file-values'>{{ records.length }} records to fetch</span>
             </p>
+            {% endraw %}
             <table id='' class="table collapse w-100 f6">
                 <thead>
                     <tr>
                         <th class="pa2 bb b--light-gray bw1 tl">Charity number</th>
-                        <th class="pa2 bb b--light-gray bw1 tl">Charity name</th>
                         <th class="pa2 bb b--light-gray bw1 tl">Financial year end</th>
+                        <th class="pa2 bb b--light-gray bw1 tl">Charity name</th>
                         <th class="pa2 bb b--light-gray bw1 tr">Income</th>
                         <th class="pa2 bb b--light-gray bw1 tr">Spending</th>
                         <th class="pa2 bb b--light-gray bw1 tl">Status</th>
                     </tr>
                 </thead>
                 <tbody id='preview-data'>
+                    <tr
+                      is='charity-record' 
+                      v-for="(record, index) in records"
+                      v-if="record"
+                      v-bind:key="index"
+                      v-bind:regno="record.regno"
+                      v-bind:fye="record.fye"
+                    ></tr>
                 </tbody>
             </table>
             <div class="w-100">
-                <input class="mt4 f6 f5-l button-reset fl pa3 base-font no-underline tc bn bg-animate bg-yellow dim near-black pointer br2-ns" type='submit' id='upload-docs' value='Fetch documents' />
+                <input class="mt4 {{ button_style }}" type='submit' id='upload-docs' value='Fetch documents' />
             </div>
         </div>
-    </form>
+    </div>
 {% endblock content %}
 
 {% block bodyscripts %}
@@ -64,8 +77,9 @@
 <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
 <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
 <script src="{{ url_for('static', filename='js/bulkReact.js') }}" type="text/babel"></script> #}
-<script src="{{ url_for('static', filename='js/bulk.js') }}"></script>
-{# <script type='text/javascript'>
 
-</script> #}
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="{{ url_for('static', filename='js/bulkVue.js') }}"></script>
+
+{# <script src="{{ url_for('static', filename='js/bulk.js') }}"></script> #}
 {% endblock %}
