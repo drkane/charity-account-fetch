@@ -20,13 +20,13 @@
         </div>
         {# <div id="bulk-upload" class="flex flex-wrap"></div> #}
         <div class="flex flex-wrap" id='stage-1'>
-            <div class="w-100 w-50-l">
+            {# <div class="w-100 w-50-l">
                 <label class="db w-100 mt4 b">Upload a CSV file: </label>
                 <input class="mt4 db cf data-input" type='file' name='file' id='file' />
-                {# <button v-on:click="fetchFromFile">Prepare records</button> #}
-            </div>
+                <button v-on:click="fetchFromFile">Prepare records</button>
+            </div> #}
             <div class="w-100 w-50-l">
-                <label class="db w-100 mt4 b">Or paste a list of charities: </label>
+                <label class="db w-100 mt4 b">Paste a list of charities: </label>
                 <textarea class="{{ input_style }} w-100 data-input" rows="8" id='list' placeholder='123456,2020-03-31' v-model="textAreaRecords"></textarea>
                 <button class="mt2 {{ button_style }}" v-on:click.prevent="fetchFromTextArea">Prepare records</button>
             </div>
@@ -58,12 +58,12 @@
                       v-if="record"
                       v-bind:key="index"
                       v-bind:regno="record.regno"
-                      v-bind:fye="record.fye"
+                      v-bind:initial-fyend="record.fyend"
                     ></tr>
                 </tbody>
             </table>
             <div class="w-100">
-                <input class="mt4 {{ button_style }}" type='submit' id='upload-docs' value='Fetch documents' />
+                <input class="mt4 {{ button_style }}" type='submit' id='upload-docs' v-on:click="fetchDocuments" value='Fetch documents' />
             </div>
         </div>
     </div>
