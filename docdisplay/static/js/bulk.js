@@ -1,55 +1,200 @@
-var charCache = {};
+// store to hold the data
+var data = {
+    charCache: {},
+    records: [],
+    textAreaRecords: '',
+    source: '',
+}
 
-function getRecordData(record) {
-    if (!record[0].match('[1-9][0-9]{5,6}')) {
-        return null;
+// record for a charity/fye combo
+var charityRecord = {
+    template: `
+    <tr v-bind:class="{ 'bg-washed-red': error }">
+    <template v-if="error">
+            <td class="pa2">{{ regno }}</td>
+            <td class="pa2">{{ fyend }}</td>
+            <td class="pa2" colspan="4">
+                <strong class="red">ERROR:</strong> {{ error }}
+            </td>
+    </template>
+    <template v-else>
+            <td class="pa2">{{ regno }}</td>
+            <td class="pa2">{{ fyend }}</td>
+            <td class="pa2">{{ name }}</td>
+            <td class="pa2 tr">{{ numberFormat(income) }}</td>
+            <td class="pa2 tr">{{ numberFormat(spending) }}</td>
+            <td class="pa2">{{ status }}</td>
+        </template>
+    </tr>`,
+    props: ['regno', 'initialFyend'],
+    data: function(){
+        return {
+            income: null,
+            spending: null,
+            name: null,
+            doc_url: null,
+            url: null,
+            fyend: this.initialFyend,
+            error: null,
+            fye_source: null,
+            loading: false,
+        }
+    },
+    mounted: function(){
+        // setup event for fetching document
+        this.$parent.$on('fetch-documents', this.fetchDocument);
+
+        // get the record data
+        this.fetchCharity();
+    },
+    computed: {
+        status: function(){
+            if(this.loading){
+                return 'Loading';
+            }
+            if(this.error){
+                return 'Error';
+            }
+            if(this.doc_url){
+                return 'Document fetched';
+            }
+            if(!this.url){
+                return 'No document available';
+            }
+            if(this.fye_source){
+                return this.fye_source;
+            }
+            return 'To fetch';
+        }
+    },
+    methods: {
+
+        // fetch details about the charity
+        fetchCharity: function () {
+            var this_ = this;
+            this.loading = true;
+            getRecordData(
+                this.regno,
+                this.fyend,
+                data.charCache
+            ).then((record) => {
+                record = parseRecordData(record, this_.fyend);
+                this_.income = record.income;
+                this_.spending = record.spending;
+                this_.fyend = record.fyend;
+                this_.fye_source = record.fye_source;
+                this_.name = record.name;
+                this_.doc_url = record.doc_url;
+                this_.url = record.url;
+                this_.error = record.error;
+                this_.loading = false;
+            });
+        },
+
+        // start the process of uploading the document
+        fetchDocument: function() {
+            if(this.url && !this.doc_url){
+                const formData = new FormData();
+                var this_ = this;
+                this.loading = true;
+                formData.append('url', this.url);
+                fetch('/doc/upload.json', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(res => {
+                    this_.doc_url = `/doc/${res.data.id}`;
+                    this_.status = 'Document already fetched';
+                    this_.loading = false;
+                });
+            } else if (!this.url) {
+                this_.status = 'Document already fetched';
+            }
+        },
+
+        // format a number
+        numberFormat: function(n){
+            if(!n){return null};
+            var nf = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 0 });
+            return nf.format(n);
+        }
     }
-    var fye;
-    if (record.length > 1 && record[1].match('[1-9][0-9]{3}-[0-9]{2}-[0-9]{2}')) {
-        fye = record[1];
+}
+
+// main component
+var vm = new Vue({
+    el: "#bulk-upload",
+    data: data,
+    methods: {
+        fetchFromTextArea: (event) => {
+            fetchFromFile(vm.textAreaRecords);
+            vm.source = 'Text area';
+        },
+        fetchDocuments: function(event){
+            this.$emit('fetch-documents');
+        }
+    },
+    components: {
+        'charity-record': charityRecord
+    }
+});
+
+// Parse records from a CSV file
+function fetchFromFile(file){
+    Papa.parse(file, {
+        preview: 100,
+        complete: (results) => {
+            if (results['data']) {
+                results['data'].forEach((record) => {
+                    if (!record) { return };
+                    if (!record[0].match('[1-9][0-9]{5,6}')) {
+                        return;
+                    }
+                    var fyend;
+                    if (record.length > 1 && record[1].match('[1-9][0-9]{3}-[0-9]{2}-[0-9]{2}')) {
+                        fyend = record[1];
+                    }
+                    if(data.records.find((item) => (
+                        item.regno == record[0] & item.fyend == fyend
+                    ))){return;}
+                    data.records.push({
+                        regno: record[0],
+                        fyend: fyend,
+                    });
+                });
+            }
+        }
+    });
+}
+
+// get metadata about a record
+function getRecordData(regno, fyend, charCache) {
+    if (regno in charCache) {
+        return new Promise((resolve) => resolve(charCache[regno]));
     }
 
-    if (record[0] in charCache) {
-        return new Promise((_) => charCache[record[0]]);
-    }
-
-    return fetch(`/charity/${record[0]}.json`)
+    return fetch(`/charity/${regno}.json`)
         .then((r) => r.json())
-        .then((data) => {
-            charCache[record[0]] = data;
-            data['fye'] = fye;
-            return data;
+        .then((record) => {
+            charCache[regno] = record;
+            record['fyend'] = fyend;
+            return record;
         })
         .catch(function (error) {
-            console.log(error);
             return {
-                fye: fye,
+                fyend: fyend,
                 data: {
-                    regno: record[0],
+                    regno: regno,
                 },
                 error: 'Charity not found',
             };
-        });
+        })
 }
 
-function createRecordCell(f, v, classList) {
-    var td = document.createElement('td');
-    td.classList.add(f, 'pa2');
-    if (classList) {
-        classList.forEach((c) => {
-            td.classList.add(c);
-        });
-    }
-    if (v instanceof HTMLElement) {
-        td.append(v);
-    } else if (v) {
-        td.innerText = v;
-    }
-    return td;
-}
-
-function parseRecordData(record) {
-    data = {
+// turn the record data into more useful information
+function parseRecordData(record, fyend) {
+    row = {
         regno: record['data']['regno'],
         status: 'unknown',
         name: null,
@@ -62,159 +207,42 @@ function parseRecordData(record) {
         fetch: false,
     };
     if(record.error){
-        data['status'] = 'error';
-        return data
+        row['status'] = 'error';
+        return row
     }
 
-    data['name'] = record['data']['charity']['names'][0]['value'];
+    row['name'] = record['data']['charity']['names'][0]['value'];
     
-    if (record['fye']) {
-        fy = record['data']['charity']['finances'].find((f) => f['fyend'] == record['fye']);
+    if (fyend) {
+        fy = record['data']['charity']['finances'].find((f) => f['fyend'] == fyend);
         if (!fy) {
-            data['status'] = 'FYE not found';
+            row['fye_source'] = 'FYE not found';
         } else {
-            data['status'] = 'Matched';
-            data['income'] = fy['income'];
-            data['spending'] = fy['spending'];
-            data['fyend'] = fy['fyend'];
-            data['doc_url'] = fy['doc_url'];
-            data['url'] = fy['url'];
+            row['fye_source'] = 'Matched';
+            row['income'] = fy['income'];
+            row['spending'] = fy['spending'];
+            row['fyend'] = fy['fyend'];
+            row['doc_url'] = fy['doc_url'];
+            row['url'] = fy['url'];
         }
     } else {
         fy = record['data']['charity']['finances'].find((f) => ('url' in f));
         if (!fy) {
             fy = record['data']['charity']['finances'][0];
-            data['status'] = 'No account PDFs available';
+            row['fye_source'] = 'No account PDFs available';
         } else {
-            data['status'] = 'Latest with url';
+            row['fye_source'] = 'Latest with url';
         }
-        data['income'] = fy['income'];
-        data['spending'] = fy['spending'];
-        data['fyend'] = fy['fyend'];
-        data['doc_url'] = fy['doc_url'];
-        data['url'] = fy['url'];
+        row['income'] = fy['income'];
+        row['spending'] = fy['spending'];
+        row['fyend'] = fy['fyend'];
+        row['doc_url'] = fy['doc_url'];
+        row['url'] = fy['url'];
     }
-    if(data['doc_url']){
-        data['status'] = 'Document already fetched';
-    } else if(data['url']){
-        data['fetch'] = true;
+    if (row['doc_url']){
+        row['status'] = 'Document already fetched';
+    } else if (row['url']){
+        row['fetch'] = true;
     }
-    return data
+    return row
 }
-
-function createRecordRow(record){
-
-    var nf = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 0 });
-    var tr = document.createElement('tr');
-    for (let [key, value] of Object.entries(record)) {
-        tr.dataset[key] = value;
-    }    
-    tr.id = `record-${record.regno}`;
-    tr.classList.add('record-row');
-
-    if (record.error) {
-        tr.classList.add('bg-washed-red');
-        tr.append(createRecordCell('regno', record.regno));
-        message = createRecordCell('status', record.error);
-        message.setAttribute('colspan', 5);
-        tr.append(message);
-        return tr;
-    }
-
-    tr.append(createRecordCell('regno', record.regno));
-    tr.append(createRecordCell('name', record.name));
-    if (record.fyend) {
-        tr.append(createRecordCell('fye', record.fyend));
-        if (typeof data['income'] !== 'undefined') {
-            tr.append(createRecordCell('income', nf.format(data['income']), ['tr']));
-            tr.append(createRecordCell('spending', nf.format(data['spending']), ['tr']));
-        } else {
-            tr.append(createRecordCell('income', null, ['tr']));
-            tr.append(createRecordCell('spending', null, ['tr']));
-        }
-        if (data["doc_url"]) {
-            let a = document.createElement('a');
-            a.href = data['doc_url'];
-            a.innerText = 'Document exists';
-            tr.classList.add('bg-light-green');
-            tr.append(createRecordCell('status', a));
-        } else if (data['url']) {
-            let a = document.createElement('a');
-            a.href = data['url'];
-            a.innerText = `Fetch url [${data['status']}]`;
-            tr.append(createRecordCell('status', a));
-        } else {
-            tr.classList.add('bg-washed-red');
-            tr.append(createRecordCell('status', data['status']));
-        }
-    } else {
-        tr.append(createRecordCell('fye', null));
-        tr.append(createRecordCell('income', null));
-        tr.append(createRecordCell('spending', null));
-        tr.append(createRecordCell('status', data['status']));
-    }
-    return tr;
-}
-
-document.addEventListener("DOMContentLoaded", function () {
-
-    Array.from(document.getElementsByClassName('data-input')).forEach((el) => {
-        el.value = '';
-        el.addEventListener('change', (e) => {
-            e.preventDefault();
-            var file;
-            var source;
-            if (e.target.files) {
-                file = e.target.files[0];
-                source = file.name;
-            } else if (e.target.value) {
-                file = e.target.value;
-                source = 'Text box';
-            }
-            if (file) {
-                Papa.parse(file, {
-                    preview: 100,
-                    complete: (results) => {
-                        document.getElementById('file-source').innerText = source;
-                        var table = document.getElementById('preview-data');
-                        table.innerHtml = '';
-                        if (results['data']) {
-                            var rowCount = 0;
-                            results['data'].forEach((row) => {
-                                row = getRecordData(row);
-                                if (row) {
-                                    row.then((data) => {
-                                        rowCount++;
-                                        data = parseRecordData(data);
-                                        var tr = createRecordRow(data);
-                                        table.append(tr);
-                                        document.getElementById('file-values').innerText = `(${rowCount} records found)`;
-                                    })
-                                }
-                            });
-                        }
-                    }
-                });
-            }
-        });
-    });
-
-    document.getElementById('upload-docs').addEventListener('click', (e) => {
-        e.preventDefault();
-        Array.from(document.getElementsByClassName('record-row')).forEach((row) => {
-            const id = row.id.replace('record-', '');
-            if(row.dataset.fetch=="true"){
-                const formData = new FormData();
-                formData.append('url', row.dataset.url);
-                fetch('/doc/upload.json', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(res => res.json())
-                .then(res => {
-                    console.log(res);
-                })
-            }
-        });
-    });
-});

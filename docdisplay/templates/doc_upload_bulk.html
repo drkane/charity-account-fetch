@@ -9,7 +9,7 @@
         <div class="flex flex-wrap" id=''>
             <div class="w-100">
                 <p class="ma0 pa0 w-100 measure">
-                    Upload or paste a list of charity numbers to fetch documents for.
+                    Paste a list of charity numbers to fetch documents for.
                     You can also include a financial year end, otherwise the most recent account will be fetched. 
                 </p>
                 <p class="pa0 w-100 measure">
@@ -18,13 +18,7 @@
                 </p>
             </div>
         </div>
-        {# <div id="bulk-upload" class="flex flex-wrap"></div> #}
         <div class="flex flex-wrap" id='stage-1'>
-            {# <div class="w-100 w-50-l">
-                <label class="db w-100 mt4 b">Upload a CSV file: </label>
-                <input class="mt4 db cf data-input" type='file' name='file' id='file' />
-                <button v-on:click="fetchFromFile">Prepare records</button>
-            </div> #}
             <div class="w-100 w-50-l">
                 <label class="db w-100 mt4 b">Paste a list of charities: </label>
                 <textarea class="{{ input_style }} w-100 data-input" rows="8" id='list' placeholder='123456,2020-03-31' v-model="textAreaRecords"></textarea>
@@ -73,13 +67,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.1.0/papaparse.min.js" 
         integrity="sha256-Fh801SO9gqegfUdkDxyzXzIUPWzO/Vatqj8uN+5xcL4=" 
         crossorigin="anonymous"></script>
-{# <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
-<script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
-<script src="{{ url_for('static', filename='js/bulkReact.js') }}" type="text/babel"></script> #}
-
-<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
-<script src="{{ url_for('static', filename='js/bulkVue.js') }}"></script>
-
-{# <script src="{{ url_for('static', filename='js/bulk.js') }}"></script> #}
+<script src="{{ url_for('static', filename='js/vue.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/bulk.js') }}"></script>
 {% endblock %}
