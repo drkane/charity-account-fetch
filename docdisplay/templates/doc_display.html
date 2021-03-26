@@ -1,0 +1,199 @@
+{% from '_search.html' import search %}
+{% extends "base.html" %}
+
+
+{% if highlight_count > 0 %}
+{% set doc_content_url = url_for("doc.doc_get_embed", id=id, q=highlight, _anchor="match-1") %}
+{% else %}
+{% set doc_content_url = url_for("doc.doc_get_embed", id=id) %}
+{% endif %}
+{% set doc_pdf_url = url_for("doc.doc_get_pdf", id=id) %}
+
+{% block content %}
+<div class="w-20-l fl-l pr4-l pb3">
+    <h2>Document <code>{{id}}</code></h2>
+    {% if result.attachment.pages %}
+    <p>{{result.attachment.pages}} pages</p>
+    {% endif %}
+    <p>Charity: <a href='{{ url_for("charity.charity_get", regno=result.regno) }}' class="link blue b">{{result.regno}}</a></p>
+    <p>Financial year end: <span class="b">{{result.fye[0:10]|dateformat(o='%d %B %Y')}}</span></p>
+    <form class="">
+        <input type="search" name="q" value="{{ highlight or ''}}" 
+            class="f4 f3-l input-reset ba b--black-20 fl near-black bg-white pa3 lh-solid w-100 br2-ns" 
+            placeholder='search term' />
+        <input class="f4 button-reset ba b--black-20 fl pv2 tc bg-animate bg-yellow dim near-black pointer w-100 br2-ns mt2"
+            type="submit" 
+            value="Search this doc" />
+        <input class="f4 button-reset ba b--black-20 fl pv2 tc bg-animate bg-washed-purple dim near-black pointer w-100 br2-ns mt2"
+            type="submit"
+            value="Search all docs"
+            name=""
+            formaction="{{url_for('doc.doc_search', q=highlight)}}"
+            placeholder="">
+    </form>
+    {% if highlight %}
+    <div class="ma0 pa0 f5">
+        {% if highlight_count %}
+        <p>Showing match <span id='currentMatch'>1</span> of <span class="">{{highlight_count}}</span></p>
+        <p class="f6 flex justify-between mw5">
+            <a href="#first-match" class="move-to-match" id='move-to-first'>&laquo; First</a>
+            <a href="#previous-match" class="move-to-match" id='move-to-previous'>&lsaquo; Prev</a>
+            <select class="move-to-match-select" id='move-to-match-select'>
+                <option value="" selected="selected">Go to</option>
+                {% for i in range(highlight_count) %}
+                <option value="{{i+1}}" class="f6">{{i+1}}</option>
+                {% endfor %}
+            </select>
+            <a href="#next-match" class="move-to-match" id='move-to-next'>&rsaquo; Next</a>
+            <a href="#last-match" class="move-to-match" id='move-to-last'>&raquo; Last</a>
+        </p>
+        {% else %}
+        <p>No matches found</p>
+        {% endif %}
+    </div>
+    {% elif result.attachment.pages %}
+    <div class="ma0 pa0 f5">
+        <p>Page <span id='currentPage'>1</span> of <span class="">{{result.attachment.pages}}</span></p>
+        <p class="f6 flex justify-between mw5">
+            <a href="#first-page" class="move-to-page" id='move-to-first'>&laquo; First</a>
+            <a href="#previous-page" class="move-to-page" id='move-to-previous'>&lsaquo; Prev</a>
+            <select class="move-to-page-select" id='move-to-page-select'>
+                <option value="" selected="selected">Go to</option>
+                {% for i in range(result.attachment.pages) %}
+                <option value="{{i+1}}" class="f6">Page {{i+1}}</option>
+                {% endfor %}
+            </select>
+            <a href="#next-page" class="move-to-page" id='move-to-next'>&rsaquo; Next</a>
+            <a href="#last-page" class="move-to-page" id='move-to-last'>&raquo; Last</a>
+        </p>
+    </div>
+    {% endif %}
+</div>
+<div class="w-100 w-40-l fl-l mb2">
+    <h3 class="ma0 pa0 f4">
+        Document content
+        <span class="f6 normal">
+         - <a href="{{doc_content_url}}" class="link blue" target="_blank">View in new window</a>
+        </span>
+    </h3>
+    <iframe src='{{doc_content_url}}' class="w-100 vh-75 b--light-gray bw1 ba bg-washed-yellow" id="doc-preview"></iframe>
+</div>
+<div class="w-100 w-40-l fl-l pl4-l">
+    <h3 class="ma0 pa0 f4">
+        Document preview
+        <span class="f6 normal">
+         - <a href="{{doc_pdf_url}}" class="link blue" target="_blank">View in new window</a>
+        </span>
+    </h3>
+    <iframe src='{{doc_pdf_url}}' class="w-100 vh-75"></iframe>
+</div>
+{% endblock content %}
+
+{% block bodyscripts %}
+<script type='text/javascript'>
+var currentMatch = 1;
+var currentPage = 1;
+const matchCounts = {{highlight_count|tojson}};
+const pageCounts = {{result.attachment.pages|tojson}};
+
+const updateCurrentMatch = function(n){
+    if(document.getElementById('currentMatch')){
+        currentMatch = Math.min(Math.max(n, 1), matchCounts);
+        document.getElementById('currentMatch').innerText = currentMatch;
+        document.getElementById('doc-preview').contentWindow.location.hash = 'match-' + currentMatch;
+        if(currentMatch == 1){
+            document.getElementById('move-to-previous').classList.add('o-0');
+            document.getElementById('move-to-first').classList.add('o-0');
+        } else {
+            document.getElementById('move-to-previous').classList.remove('o-0');
+            document.getElementById('move-to-first').classList.remove('o-0');
+        }
+        if(currentMatch == matchCounts){
+            document.getElementById('move-to-next').classList.add('o-0');
+            document.getElementById('move-to-last').classList.add('o-0');
+        } else {
+            document.getElementById('move-to-next').classList.remove('o-0');
+            document.getElementById('move-to-last').classList.remove('o-0');
+        }
+    }
+}
+updateCurrentMatch(1);
+
+const updateCurrentPage = function(n){
+    if(document.getElementById('currentPage')){
+        currentPage = Math.min(Math.max(n, 1), pageCounts);
+        document.getElementById('currentPage').innerText = currentPage;
+        document.getElementById('doc-preview').contentWindow.location.hash = 'page-' + currentPage;
+        if(currentPage == 1){
+            document.getElementById('move-to-previous').classList.add('o-0');
+            document.getElementById('move-to-first').classList.add('o-0');
+        } else {
+            document.getElementById('move-to-previous').classList.remove('o-0');
+            document.getElementById('move-to-first').classList.remove('o-0');
+        }
+        if(currentPage == pageCounts){
+            document.getElementById('move-to-next').classList.add('o-0');
+            document.getElementById('move-to-last').classList.add('o-0');
+        } else {
+            document.getElementById('move-to-next').classList.remove('o-0');
+            document.getElementById('move-to-last').classList.remove('o-0');
+        }
+    }
+}
+updateCurrentPage(1);
+
+Array.from(document.getElementsByClassName('move-to-match')).forEach((el) => {
+    el.addEventListener('click', (e) => {
+        e.preventDefault();
+        let moveTo = new URL(e.target.href).hash;
+        var n = currentMatch;
+        if(moveTo == '#previous-match'){
+            n = currentMatch - 1;
+        } else if(moveTo == '#next-match'){
+            n = currentMatch + 1;
+        } else if(moveTo == '#first-match'){
+            n = 1;
+        } else if(moveTo == '#last-match'){
+            n = matchCounts;
+        } else {
+            n = parseInt(moveTo.replace("#match-", ''));
+        }
+        updateCurrentMatch(n);
+    })
+});
+
+Array.from(document.getElementsByClassName('move-to-page')).forEach((el) => {
+    el.addEventListener('click', (e) => {
+        e.preventDefault();
+        let moveTo = new URL(e.target.href).hash;
+        var n = currentMatch;
+        if(moveTo == '#previous-page'){
+            n = currentPage - 1;
+        } else if(moveTo == '#next-page'){
+            n = currentPage + 1;
+        } else if(moveTo == '#first-page'){
+            n = 1;
+        } else if(moveTo == '#last-page'){
+            n = pageCounts;
+        } else {
+            n = parseInt(moveTo.replace("#page-", ''));
+        }
+        updateCurrentPage(n);
+    })
+});
+
+document.getElementById('move-to-match-select').addEventListener('change', (e) => {
+    e.preventDefault();
+    if(e.target.value){
+        updateCurrentMatch(parseInt(e.target.value));
+    }
+});
+
+document.getElementById('move-to-page-select').addEventListener('change', (e) => {
+    e.preventDefault();
+    if(e.target.value){
+        updateCurrentPage(parseInt(e.target.value));
+    }
+});
+</script>
+{% endblock %}

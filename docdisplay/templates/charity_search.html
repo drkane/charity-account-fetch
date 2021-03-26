@@ -1,0 +1,41 @@
+{% from '_search.html' import search %}
+{% extends "base.html" %}
+{% block content %}
+    <h2>Search for a charity</h2>
+    <form>
+        {{ search(q, 'Charity') }}
+    </form>
+    {% if results %}
+    {% if results.count > results.results|length %}
+    <p>{{ nav.first_result }} - {{nav.last_result}} of {{results.count}} results:</p>
+    {% else %}
+    <p>{{results.count}} results:</p>
+    {% endif %}
+    <ul class="">
+        {% for r in results.results %}
+        <li class=" mb3">
+            <code>{{r.id}}</code>
+            <a href="{{ url_for('charity.charity_get', regno=r.id) }}">
+                {{r.names.0.value-}} 
+            </a>
+            <span class="mid-gray f5">({{ r.finances|length }} years)</span>
+        </li>
+        {% endfor %}
+    </ul>
+    <nav class="f5">
+        {% if nav.first %}
+        <a href="{{nav.first}}" class="link blue underline-hover">&laquo; First</a>
+        {% endif %}
+        {% if nav.prev %}
+        <a href="{{nav.prev}}" class="link blue underline-hover">&lsaquo; Prev</a>
+        {% endif %}
+        <span class="f5 ph4">Page {{nav.current_page}} of {{nav.last_page}}</span>
+        {% if nav.next %}
+        <a href="{{nav.next}}" class="link blue underline-hover">Next &rsaquo;</a>
+        {% endif %}
+        {% if nav.last %}
+        <a href="{{nav.last}}" class="link blue underline-hover">Last &raquo;</a>
+        {% endif %}
+    </nav>
+    {% endif %}
+{% endblock content %}

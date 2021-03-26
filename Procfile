@@ -1,0 +1,1 @@
+web: gunicorn "docdisplay:create_app()"
