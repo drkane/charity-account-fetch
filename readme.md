@@ -19,7 +19,7 @@ This will mean that the dependencies don't interfere with any other
 python installations
 
 ```sh
-git clone -b webapp https://github.com/drkane/charity-account-fetch.git
+git clone https://github.com/drkane/charity-account-fetch.git
 cd charity-account-fetch/
 python -m venv env
 ```
