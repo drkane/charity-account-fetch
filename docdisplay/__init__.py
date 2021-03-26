@@ -6,6 +6,7 @@ from flask import Flask
 from . import db
 from . import blueprints as bp
 from .utils import add_highlights, parse_datetime
+from .fetch import fetch_cli
 
 
 def create_app(test_config=None):
@@ -37,6 +38,7 @@ def create_app(test_config=None):
 
     db.init_app(app)
     bp.init_app(app)
+    app.cli.add_command(fetch_cli)
 
     @app.context_processor
     def inject_now():

@@ -32,7 +32,7 @@
                         <button type="submit" class="link button-reset base-font bn pa0 ma0 bg-inherit pointer blue underline-hover">
                             Import PDF
                         </button>
-                        [{{ r.size|filesizeformat }}]
+                        {% if r.size %}[{{ r.size|filesizeformat }}]{% endif %}
                     </form>
                     {% endif %}
                 </td>

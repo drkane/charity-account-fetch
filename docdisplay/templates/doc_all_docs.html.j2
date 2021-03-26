@@ -1,0 +1,53 @@
+{% from '_search.html' import search %}
+{% extends "base.html" %}
+
+{% block content %}
+<p>
+    <strong>{{ "{:,.0f}".format(resultCount) }}</strong> documents in index
+</p>
+<form>
+    {{ search('', 'Search in documents') }}
+</form>
+<p>
+    Showing results {{ (page * page_size) + 1 }} to {{ ((page * page_size) + page_size, resultCount)|min }}
+</p>
+<table class="table collapse w-100 f5">
+    <thead>
+        <tr>
+            <th class="pa2 bb b--light-gray bw1 tl">Charity Number</th>
+            <th class="pa2 bb b--light-gray bw1 tl">Financial year</th>
+            <th class="pa2 bb b--light-gray bw1 tl">Charity Name</th>
+            <th class="pa2 bb b--light-gray bw1 tl">Income</th>
+            <th class="pa2 bb b--light-gray bw1 tl">Spending</th>
+            <th class="pa2 bb b--light-gray bw1 tl">Assets</th>
+            <th class="pa2 bb b--light-gray bw1 tl">File</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for r in results %}
+        <tr>
+            <td class="pa2">{{ r._source.regno }}</td>
+            <td class="pa2">{{ r._source.fye[0:10] }}</td>
+            <td class="pa2">{% if r._source.name %}{{ r._source.name }}{% endif %}</td>
+            <td class="pa2 tr">{% if r._source.income %}{{ "£{:,.0f}".format(r._source.income|int) }}{% endif %}</td>
+            <td class="pa2 tr">{% if r._source.spending %}{{ "£{:,.0f}".format(r._source.spending|int) }}{% endif %}</td>
+            <td class="pa2 tr">{% if r._source.assets %}{{ "£{:,.0f}".format(r._source.assets|int) }}{% endif %}</td>
+            <td class="pa2">
+                <a href="{{ url_for('doc.doc_get', id=r._id) }}">
+                    {{ r._source.filename }}
+                </a>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+<p>
+    Page {{ page + 1 }} of {{ maxPage }}
+    {% if page > 0 %}
+    <a href="{{url_for('doc.doc_all_docs', p=page-1)}}">&lt; Previous page</a>
+    {% endif %}
+    {% if not (page * page_size) + page_size >= resultCount %}
+    <a href="{{url_for('doc.doc_all_docs', p=page+1)}}">Next page &gt;</a>
+    {% endif %}
+</p>
+{% endblock content %}

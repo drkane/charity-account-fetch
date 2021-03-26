@@ -84,8 +84,10 @@
         <span class="f6 normal">
          - <a href="{{doc_pdf_url}}" class="link blue" target="_blank">View in new window</a>
         </span>
-    </h3>
-    <iframe src='{{doc_pdf_url}}' class="w-100 vh-75"></iframe>
+    </h3> 
+    <object data="{{doc_pdf_url}}" type="application/pdf" class="w-100 vh-75">
+        <embed src="{{doc_pdf_url}}" type="application/pdf" />
+    </object>
 </div>
 {% endblock content %}
 
@@ -182,18 +184,24 @@ Array.from(document.getElementsByClassName('move-to-page')).forEach((el) => {
     })
 });
 
-document.getElementById('move-to-match-select').addEventListener('change', (e) => {
-    e.preventDefault();
-    if(e.target.value){
-        updateCurrentMatch(parseInt(e.target.value));
-    }
-});
+var moveToMatchSelect = document.getElementById('move-to-match-select');
+if(moveToMatchSelect){
+    moveToMatchSelect.addEventListener('change', (e) => {
+        e.preventDefault();
+        if(e.target.value){
+            updateCurrentMatch(parseInt(e.target.value));
+        }
+    });
+}
 
-document.getElementById('move-to-page-select').addEventListener('change', (e) => {
-    e.preventDefault();
-    if(e.target.value){
-        updateCurrentPage(parseInt(e.target.value));
-    }
-});
+var moveToPageSelect = document.getElementById('move-to-page-select');
+if(moveToPageSelect){
+    document.getElementById('move-to-page-select').addEventListener('change', (e) => {
+        e.preventDefault();
+        if(e.target.value){
+            updateCurrentPage(parseInt(e.target.value));
+        }
+    });
+}
 </script>
 {% endblock %}

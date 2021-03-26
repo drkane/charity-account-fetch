@@ -1,10 +1,4 @@
-// store to hold the data
-var data = {
-    charCache: {},
-    records: [],
-    textAreaRecords: '',
-    source: '',
-}
+var charCache = {};
 
 // record for a charity/fye combo
 var charityRecord = {
@@ -23,7 +17,11 @@ var charityRecord = {
             <td class="pa2">{{ name }}</td>
             <td class="pa2 tr">{{ numberFormat(income) }}</td>
             <td class="pa2 tr">{{ numberFormat(spending) }}</td>
-            <td class="pa2">{{ status }}</td>
+            <td class="pa2" v-if="doc_url">
+                <a :href="doc_url" target="_blank" class="link button-reset base-font bn pa0 ma0 bg-inherit pointer blue underline-hover">
+                {{ status }}</a>
+            </td>
+            <td class="pa2" v-else>{{ status }}</td>
         </template>
     </tr>`,
     props: ['regno', 'initialFyend'],
@@ -73,10 +71,10 @@ var charityRecord = {
         fetchCharity: function () {
             var this_ = this;
             this.loading = true;
-            getRecordData(
+            this.getRecordData(
                 this.regno,
                 this.fyend,
-                data.charCache
+                charCache
             ).then((record) => {
                 record = parseRecordData(record, this_.fyend);
                 this_.income = record.income;
@@ -90,6 +88,31 @@ var charityRecord = {
                 this_.loading = false;
             });
         },
+        
+
+        // get metadata about a record
+        getRecordData: function(regno, fyend, charCache) {
+            if (regno in charCache) {
+                return new Promise((resolve) => resolve(charCache[regno]));
+            }
+
+            return fetch(`/charity/${regno}.json`)
+                .then((r) => r.json())
+                .then((record) => {
+                    charCache[regno] = record;
+                    record['fyend'] = fyend;
+                    return record;
+                })
+                .catch(function (error) {
+                    return {
+                        fyend: fyend,
+                        data: {
+                            regno: regno,
+                        },
+                        error: 'Charity not found',
+                    };
+                })
+        },
 
         // start the process of uploading the document
         fetchDocument: function() {
@@ -98,6 +121,8 @@ var charityRecord = {
                 var this_ = this;
                 this.loading = true;
                 formData.append('url', this.url);
+                formData.append('fye', this.fyend);
+                formData.append('regno', this.regno);
                 fetch('/doc/upload.json', {
                     method: 'POST',
                     body: formData
@@ -109,7 +134,7 @@ var charityRecord = {
                     this_.loading = false;
                 });
             } else if (!this.url) {
-                this_.status = 'Document already fetched';
+                this.status = 'Document already fetched';
             }
         },
 
@@ -125,72 +150,54 @@ var charityRecord = {
 // main component
 var vm = new Vue({
     el: "#bulk-upload",
-    data: data,
+    data: () => {
+        return {
+            records: [],
+            textAreaRecords: '',
+            source: '',
+        }
+    },
     methods: {
-        fetchFromTextArea: (event) => {
-            fetchFromFile(vm.textAreaRecords);
-            vm.source = 'Text area';
+        fetchFromFile: function(file){
+            var component = this;
+            Papa.parse(file, {
+                preview: 100,
+                complete: (results) => {
+                    if (results['data']) {
+                        results['data'].forEach((record) => {
+                            if (!record) { return };
+                            if (!record[0].match('[1-9][0-9]{5,6}')) {
+                                return;
+                            }
+                            var fyend;
+                            if (record.length > 1 && record[1].match('[1-9][0-9]{3}-[0-9]{2}-[0-9]{2}')) {
+                                fyend = record[1];
+                            }
+                            if(component.records.find((item) => (
+                                item.regno == record[0] & item.fyend == fyend
+                            ))){return;}
+                            component.records.push({
+                                regno: record[0],
+                                fyend: fyend,
+                            });
+                        });
+                    }
+                }
+            });
+        },
+        fetchFromTextArea: function(event){
+            this.records = [];
+            this.fetchFromFile(this.textAreaRecords);
+            this.source = 'Text area';
         },
         fetchDocuments: function(event){
             this.$emit('fetch-documents');
-        }
+        },
     },
     components: {
         'charity-record': charityRecord
     }
 });
-
-// Parse records from a CSV file
-function fetchFromFile(file){
-    Papa.parse(file, {
-        preview: 100,
-        complete: (results) => {
-            if (results['data']) {
-                results['data'].forEach((record) => {
-                    if (!record) { return };
-                    if (!record[0].match('[1-9][0-9]{5,6}')) {
-                        return;
-                    }
-                    var fyend;
-                    if (record.length > 1 && record[1].match('[1-9][0-9]{3}-[0-9]{2}-[0-9]{2}')) {
-                        fyend = record[1];
-                    }
-                    if(data.records.find((item) => (
-                        item.regno == record[0] & item.fyend == fyend
-                    ))){return;}
-                    data.records.push({
-                        regno: record[0],
-                        fyend: fyend,
-                    });
-                });
-            }
-        }
-    });
-}
-
-// get metadata about a record
-function getRecordData(regno, fyend, charCache) {
-    if (regno in charCache) {
-        return new Promise((resolve) => resolve(charCache[regno]));
-    }
-
-    return fetch(`/charity/${regno}.json`)
-        .then((r) => r.json())
-        .then((record) => {
-            charCache[regno] = record;
-            record['fyend'] = fyend;
-            return record;
-        })
-        .catch(function (error) {
-            return {
-                fyend: fyend,
-                data: {
-                    regno: regno,
-                },
-                error: 'Charity not found',
-            };
-        })
-}
 
 // turn the record data into more useful information
 function parseRecordData(record, fyend) {

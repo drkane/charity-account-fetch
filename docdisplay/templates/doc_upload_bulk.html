@@ -22,7 +22,7 @@
             <div class="w-100 w-50-l">
                 <label class="db w-100 mt4 b">Paste a list of charities: </label>
                 <textarea class="{{ input_style }} w-100 data-input" rows="8" id='list' placeholder='123456,2020-03-31' v-model="textAreaRecords"></textarea>
-                <button class="mt2 {{ button_style }}" v-on:click.prevent="fetchFromTextArea">Prepare records</button>
+                <button class="mt2 {{ button_style }} b" v-on:click.prevent="fetchFromTextArea">Prepare records</button>
             </div>
         </div>
         <div class="flex flex-wrap" id="stage-2" v-if="records.length > 0">
@@ -34,7 +34,7 @@
                 <span id='file-values'>{{ records.length }} records to fetch</span>
             </p>
             {% endraw %}
-            <table id='' class="table collapse w-100 f6">
+            <table id='' class="table collapse w-100 f5">
                 <thead>
                     <tr>
                         <th class="pa2 bb b--light-gray bw1 tl">Charity number</th>

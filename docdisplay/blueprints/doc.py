@@ -1,6 +1,7 @@
 import base64
 import re
 import datetime
+import math
 
 from flask import (
     Blueprint, render_template, current_app, request,
@@ -128,6 +129,38 @@ def doc_upload_bulk():
     return render_template('doc_upload_bulk.html')
 
 
+@bp.route('/all_docs')
+def doc_all_docs():
+    es = get_db()
+    page = int(request.values.get("p", 0))
+    page_size = 10
+    res = es.search(
+        index=current_app.config.get('ES_INDEX'),
+        doc_type="_doc",
+        _source_excludes=['filedata', 'attachment'],
+        body={
+            'size': page_size,
+            'from': page_size * page,
+            'query': {
+                'match_all': {}
+            }
+        }
+    )
+    resultCount = res.get('hits', {}).get('total', 0)
+    if isinstance(resultCount, dict):
+        resultCount = resultCount.get('value')
+    maxPage = math.ceil(resultCount / page_size)
+    results = res.get('hits', {}).get('hits', [])
+    return render_template(
+        'doc_all_docs.html.j2',
+        results=results,
+        resultCount=resultCount,
+        page=page,
+        maxPage=maxPage,
+        page_size=page_size,
+    )
+
+
 @bp.route('/upload', methods=['GET', 'POST'])
 @bp.route('/upload.<filetype>', methods=['GET', 'POST'])
 def doc_upload(filetype='html'):
@@ -160,14 +193,18 @@ def doc_upload(filetype='html'):
                     })
                 return redirect(request.url)
             content = r.content
-            filename = url
             if "Content-Disposition" in r.headers.keys():
                 filename = re.findall(
                     "filename=(.+)",
                     r.headers["Content-Disposition"]
-                )[0]
+                )[0].strip('"')
+            elif request.values.get("regno") and request.values.get("fye"):
+                filename = "{}_{:%Y%m%d}.pdf".format(
+                    request.values.get("regno"),
+                    request.values.get("fye")
+                )
             else:
-                filename = url.split("/")[-1]
+                filename = "annual_accounts.pdf"
 
         else:
             flash('No file found', 'error')
@@ -210,7 +247,7 @@ def doc_upload(filetype='html'):
                     return jsonify({
                         'data': {},
                         'errors': [
-                            ('Must provide charity number ' +
+                            ('Must provide charity number '
                              ' and financial year end')
                         ],
                     })

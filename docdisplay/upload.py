@@ -7,7 +7,7 @@ import pdfplumber
 
 
 def convert_file(source):
-    with pdfplumber.load(source) as pdf:
+    with pdfplumber.open(source) as pdf:
         content = "\n\n".join([
             "<span id='page-{}'></span>\n{}".format(
                 i,

@@ -100,7 +100,7 @@ def charity_search():
 
     results = search_charities(q, limit, skip)
     nav = {
-        "first_result": ((p-1) * limit) + 1,
+        "first_result": ((p - 1) * limit) + 1,
         "last_result": min([p * limit, results['count']]),
         "current_page": p,
         'first_page': 1,
@@ -113,9 +113,9 @@ def charity_search():
             q=q,
             p=nav['last_page']
         )
-        nav['next'] = url_for('charity.charity_search', q=q, p=p+1)
+        nav['next'] = url_for('charity.charity_search', q=q, p=p + 1)
     if p > 2:
-        nav['prev'] = url_for('charity.charity_search', q=q, p=p-1)
+        nav['prev'] = url_for('charity.charity_search', q=q, p=p - 1)
         nav['first'] = url_for(
             'charity.charity_search',
             q=q,

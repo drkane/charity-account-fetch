@@ -1,15 +1,27 @@
 import os
-import argparse
 from datetime import date, datetime
 import csv
 import logging
 
+import click
+from flask.cli import AppGroup
 import requests
-import requests_cache
-from bs4 import BeautifulSoup
 import dateutil.parser
+from requests_html import HTMLSession
 
-from docdisplay.utils import filesize_text_to_int, parse_datetime
+from docdisplay.utils import parse_datetime
+
+fetch_cli = AppGroup("fetch")
+CCEW_URL = "https://register-of-charities.charitycommission.gov.uk/charity-search/-/charity-details/{}/accounts-and-annual-returns"
+
+
+def get_charity_url(regno):
+    return CCEW_URL.format(regno)
+
+
+class StripLinkText(str):
+    def __eq__(self, other):
+        return self.strip() == other.strip()
 
 
 def print_header(s: str, underline: str = "="):
@@ -17,55 +29,36 @@ def print_header(s: str, underline: str = "="):
     print(underline * len(s))
 
 
-def ccew_list_accounts(regno: str) -> list:
+def ccew_list_accounts(regno: str, session=HTMLSession()) -> list:
     """
     List accounts for a charity
     """
-    url = (
-        "https://beta.charitycommission.gov.uk/"
-        + "charity-details/?regId={}&subId=0".format(regno)
-    )
-    r = requests.get(url)
+    url = get_charity_url(regno)
     logging.debug("Fetching account list: {}".format(url))
-    if getattr(r, "from_cache", False):
-        logging.debug("Used cache")
-    soup = BeautifulSoup(r.text, "html.parser")
-    if not soup.find(id="documents"):
-        return []
-    accounts = [
-        {
-            "url": a["href"],
-            "fyend": dateutil.parser.parse(
-                a.find(class_="pcg-charity-details__doc-title").text
-            ),
-            "size": filesize_text_to_int(
-                a.find(class_="pcg-charity-details__doc-size").text
-            ),
-        }
-        for a in soup.find(id="documents").find_all(
-            "a", class_="pcg-charity-details__doc"
+
+    r = session.get(url)
+    accounts = []
+    for tr in r.html.find("tr.govuk-table__row"):
+        cells = list(tr.find("td"))
+        cell_text = [c.text.strip() if c.text else "" for c in cells]
+        if not cell_text or "accounts" not in cell_text[0].lower():
+            continue
+        if not cells[-1].find("a"):
+            continue
+        accounts.append(
+            {
+                "url": cells[-1].find("a", first=True).attrs["href"],
+                "fyend": dateutil.parser.parse(cell_text[1]).date(),
+                "size": None,
+            }
         )
-    ]
     return sorted(accounts, key=lambda x: x["fyend"], reverse=True)
-
-
-def construct_ccew_account_url(regno: str, fyend: date) -> str:
-    """
-    Turn a charity number and financial year end
-    into a Charity Commission account PDF format URL
-    """
-    return (
-        "http://apps.charitycommission.gov.uk/"
-        + "Accounts/Ends{ends}/{regno:0>10}_AC_{fyend}_E_C.PDF".format(
-            ends=regno[-2:], regno=regno, fyend=fyend.strftime("%Y%m%d")
-        )
-    )
 
 
 def download_account(
     url: str,
-    regno: str = None,
-    fyend: date = None,
+    regno: str,
+    fyend: date,
     destination: str = ".",
     session=None,
 ) -> dict:
@@ -76,10 +69,7 @@ def download_account(
     if not session:
         session = requests.Session()
 
-    if regno is None or fyend is None:
-        filename = url.rsplit("/", 1)[-1]
-    else:
-        filename = "{}_{:%Y%m%d}.pdf".format(regno, fyend)
+    filename = "{}_{:%Y%m%d}.pdf".format(regno, fyend)
     r = session.get(url)
     logging.debug("Fetching account PDF: {}".format(url))
     if getattr(r, "from_cache", False):
@@ -107,8 +97,19 @@ def download_account(
     }
 
 
+@fetch_cli.command("list")
+@click.argument("regno")
+@click.option("--destination", default=".", help="Folder in which to save accounts")
 def list_accounts_for_download(regno: str, destination: str = ".", **kwargs: dict):
+    """List all accounts for charity number REGNO.
+
+    \b
+    REGNO is the charity number
+    """
     accounts = ccew_list_accounts(regno)
+    if not accounts:
+        print("No accounts found for charity number {}".format(regno))
+        exit()
     print()
     print_header("Accounts for charity number {}".format(regno))
     for k, a in enumerate(accounts):
@@ -117,10 +118,23 @@ def list_accounts_for_download(regno: str, destination: str = ".", **kwargs: dic
     print("Enter account number to download:")
     to_download = input()
     to_download = int(to_download) - 1
-    download_account(accounts[to_download]["url"], destination=destination)
+    download_account(
+        accounts[to_download]["url"],
+        regno=regno,
+        fyend=accounts[to_download]["fyend"],
+        destination=destination,
+    )
 
 
+@fetch_cli.command("latest")
+@click.argument("regno")
+@click.option("--destination", default=".", help="Folder in which to save accounts")
 def download_latest_account(regno: str, destination: str = ".", **kwargs: dict):
+    """Download the latest account for charity number REGNO.
+
+    \b
+    REGNO is the charity number
+    """
     accounts = ccew_list_accounts(regno)
     download_account(
         accounts[0]["url"],
@@ -130,9 +144,17 @@ def download_latest_account(regno: str, destination: str = ".", **kwargs: dict):
     )
 
 
+@fetch_cli.command("all")
+@click.argument("regno")
+@click.option("--destination", default=".", help="Folder in which to save accounts")
 def download_all_accounts(regno: str, destination: str = ".", **kwargs: dict):
-    accounts = ccew_list_accounts(regno)
-    session = requests.Session()
+    """Download all available accounts for charity number REGNO.
+
+    \b
+    REGNO is the charity number
+    """
+    session = HTMLSession()
+    accounts = ccew_list_accounts(regno, session=session)
     for a in accounts:
         download_account(
             a["url"],
@@ -143,15 +165,55 @@ def download_all_accounts(regno: str, destination: str = ".", **kwargs: dict):
         )
 
 
+@fetch_cli.command("account")
+@click.argument("regno")
+@click.argument("fyend", type=parse_datetime)
+@click.option("--destination", default=".", help="Folder in which to save accounts")
 def download_account_parser(regno: str, fyend: date, destination: str = ".", **kwargs):
-    download_account(
-        construct_ccew_account_url(regno, fyend),
-        regno=regno,
-        fyend=fyend,
-        destination=destination,
-    )
+    """Download account for FYEND for REGNO.
+
+    \b
+    REGNO is the charity number
+    FYEND is the financial year end of the accounts (format YYYY-MM-DD)
+    """
+    session = HTMLSession()
+    accounts = ccew_list_accounts(regno, session=session)
+    for account in accounts:
+        if account["fyend"] == fyend:
+            download_account(
+                account["url"],
+                regno=regno,
+                fyend=fyend,
+                destination=destination,
+                session=session,
+            )
+            return
+    print("Account not found")
 
 
+@fetch_cli.command("csv")
+@click.argument("csvfile", type=click.File("r"))
+@click.option(
+    "--regno-column",
+    default="regno",
+    help="Name of the column with a charity number in",
+)
+@click.option(
+    "--fyend-column",
+    default="fyend",
+    help="""Name of the column with the financial year end in
+    (if not found then the latest accounts will be used)""",
+)
+@click.option(
+    "--destination", type=click.Path(), default=".", help="Folder in which to save accounts"
+)
+@click.option("--logfile", type=click.Path(), help="File to output results")
+@click.option(
+    "--skip-rows",
+    type=int,
+    default=0,
+    help="Number of rows to skip when parsing file",
+)
 def download_from_csv(
     csvfile,
     regno_column: str = "regno",
@@ -161,8 +223,9 @@ def download_from_csv(
     skip_rows: int = 0,
     **kwargs
 ):
+    """Download accounts for a selection of charities from CSVFILE"""
     reader = csv.DictReader(csvfile)
-    session = requests.Session()
+    session = HTMLSession()
 
     logging_fields = [
         "success",
@@ -190,15 +253,29 @@ def download_from_csv(
             regno = row[regno_column]
             fyend = row.get(fyend_column)
             result = {}
-            if fyend:
+            accounts = ccew_list_accounts(regno, session=session)
+            urls = {account["fyend"]: account["url"] for account in accounts}
+            if fyend and urls.get(fyend):
                 fyend = parse_datetime(fyend)
                 result = download_account(
-                    construct_ccew_account_url(regno, fyend),
+                    urls[fyend],
                     regno=regno,
                     fyend=fyend,
                     destination=destination,
                     session=session,
                 )
+            elif accounts:
+                result = download_account(
+                    accounts[0]["url"],
+                    regno=regno,
+                    fyend=accounts[0]["fyend"],
+                    destination=destination,
+                    session=session,
+                )
+            else:
+                result = {
+                    "error": "no accounts found"
+                }
 
         if logfile:
             with open(logfile, "a", newline="") as logf:
@@ -215,95 +292,3 @@ def download_from_csv(
                         result.get("download_timetaken"),
                     ]
                 )
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="""Download charity accounts for organisations
-    registered with the Charity Commission for England and Wales"""
-    )
-    parser.add_argument(
-        "-v", "--verbose", action="store_true", help="More descriptive output"
-    )
-
-    subparsers = parser.add_subparsers(help="Operation to perform")
-
-    list_parser = subparsers.add_parser(
-        "list", help="List accounts for download from a charity by number"
-    )
-    list_parser.add_argument("regno", help="Charity number")
-    list_parser.add_argument(
-        "--destination", default=".", help="Folder in which to save accounts"
-    )
-    list_parser.set_defaults(func=list_accounts_for_download)
-
-    latest_parser = subparsers.add_parser(
-        "latest", help="Download the latest account for a charity number"
-    )
-    latest_parser.add_argument("regno", help="Charity number")
-    latest_parser.add_argument(
-        "--destination", default=".", help="Folder in which to save accounts"
-    )
-    latest_parser.set_defaults(func=download_latest_account)
-
-    all_parser = subparsers.add_parser(
-        "all", help="Download all available accounts for a charity number"
-    )
-    all_parser.add_argument("regno", help="Charity number")
-    all_parser.add_argument(
-        "--destination", default=".", help="Folder in which to save accounts"
-    )
-    all_parser.set_defaults(func=download_all_accounts)
-
-    account_parser = subparsers.add_parser(
-        "account",
-        help="""Download an account based on
-        charity number and financial year end""",
-    )
-    account_parser.add_argument("regno", help="Charity number")
-    account_parser.add_argument(
-        "fyend", type=parse_datetime, help="Financial year end (format YYYY-MM-DD)"
-    )
-    account_parser.add_argument(
-        "--destination", default=".", help="Folder in which to save accounts"
-    )
-    account_parser.set_defaults(func=download_account_parser)
-
-    csv_parser = subparsers.add_parser(
-        "csv", help="Download accounts for a selection of charities from a CSV file"
-    )
-    csv_parser.add_argument(
-        "csvfile",
-        type=argparse.FileType("r"),
-        help="Location of the CSV file to download",
-    )
-    csv_parser.add_argument(
-        "--regno-column",
-        default="regno",
-        help="Name of the column with a charity number in",
-    )
-    csv_parser.add_argument(
-        "--fyend-column",
-        default="fyend",
-        help="""Name of the column with the financial year end in
-        (if not found then the latest accounts will be used)""",
-    )
-    csv_parser.add_argument(
-        "--destination", default=".", help="Folder in which to save accounts"
-    )
-    csv_parser.add_argument("--logfile", help="File to output results")
-    csv_parser.add_argument(
-        "--skip-rows",
-        type=int,
-        default=0,
-        help="Number of rows to skip when parsing file",
-    )
-    csv_parser.set_defaults(func=download_from_csv)
-
-    args = parser.parse_args()
-    requests_cache.install_cache()
-
-    if args.verbose:
-        logging.basicConfig(level=logging.DEBUG)
-
-    args.func(**args.__dict__)

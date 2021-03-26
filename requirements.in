@@ -1,0 +1,11 @@
+flask
+elasticsearch==6.4.0
+requests
+beautifulsoup4
+requests_html
+python-dotenv
+python-dateutil
+pdfplumber
+graphqlclient
+gunicorn
+requests-cache

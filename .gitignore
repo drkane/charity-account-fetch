@@ -3,4 +3,6 @@ data/
 *.pdf
 *.csv
 *.txt
+!requirements.txt
+!dev-requirements.txt
 env/
