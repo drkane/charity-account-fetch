@@ -21,6 +21,7 @@ def create_app(test_config=None):
             'https://charitybase.uk/api/graphql'
         ),
         CHARITYBASE_API_KEY=os.environ.get('CHARITYBASE_API_KEY'),
+        CCEW_API_KEY=os.environ.get('CCEW_API_KEY'),
     )
 
     if test_config is None:

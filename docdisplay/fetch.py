@@ -4,19 +4,23 @@ import csv
 import logging
 
 import click
+from flask import current_app
 from flask.cli import AppGroup
 import requests
 import dateutil.parser
 from requests_html import HTMLSession
 
 from docdisplay.utils import parse_datetime
+from docdisplay.cc_api import CharityCommissionAPI
 
 fetch_cli = AppGroup("fetch")
 CCEW_URL = "https://register-of-charities.charitycommission.gov.uk/charity-search/-/charity-details/{}/accounts-and-annual-returns"
 
 
 def get_charity_url(regno):
-    return CCEW_URL.format(regno)
+    api = CharityCommissionAPI(current_app.config.get('CCEW_API_KEY'))
+    org_details = api.GetCharityDetails(RegisteredNumber=regno)
+    return CCEW_URL.format(org_details["organisation_number"])
 
 
 class StripLinkText(str):

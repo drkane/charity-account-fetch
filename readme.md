@@ -34,21 +34,31 @@ Then install the python requirements.
 pip install -r requirements.txt
 ```
 
-### Step 3 - create a .env file
+### Step 3 - sign up for Charity Commission API
 
-Create a new file called `.env` in the directory. The contents of the file should
-be:
+Register for an API key with the Charity Commission beta API:
+
+<https://register-of-charities.charitycommission.gov.uk/documentation-on-the-api>
+
+Once you've signed up click on Profile > Subscriptions to create an API key. You'll need the key for the next step.
+
+### Step 4 - create a .env file
+
+Create a new file called `.env` in the directory. The contents of the file should be:
 
 ```
 FLASK_APP=docdisplay
 FLASK_ENV=development
+CCEW_API_KEY=<insert api key>
 ```
+
+Replace `<insert api key>` with your charity Commission API key from step 3.
 
 ## Using the command line
 
 You can use the command line to fetch account PDFs from charities.
 
-Follow steps 1-3 above to get the flask app installed. You can then
+Follow steps 1-4 above to get the flask app installed. You can then
 run commands to find and fetch account PDFs.
 
 On the command line, use `flask fetch` to run the commands. If you
@@ -72,13 +82,13 @@ To view help for an individual command run `flask fetch <command> --help`, eg
 These steps are optional if all you need is to manually download 
 documents using the command line.
 
-### Step 4 - get a charitybase API key
+### Step 5 - get a charitybase API key
 
 [Go to CharityBase and get an API key](https://charitybase.uk/api-portal/keys).
 
 You'll need it for the next step, so make a note somewhere.
 
-### Step 5 - Install Elasticsearch
+### Step 6 - Install Elasticsearch
 
 [Use the instructions for your operating system](https://www.elastic.co/downloads/elasticsearch)
 
@@ -86,7 +96,7 @@ When it is installed then start it running (by running `elasticsearch`).
 
 You can check it's running by visiting <http://localhost:9200/> in your web browser.
 
-### Step 6 - update your .env file
+### Step 7 - update your .env file
 
 Add the following two lines to the `.env` file created in step 3.
 
@@ -95,7 +105,7 @@ ES_URL=http://localhost:9200/
 CHARITYBASE_API_KEY=insert_key_here
 ```
 
-### Step 7 - initialise the elasticsearch index
+### Step 8 - initialise the elasticsearch index
 
 ```sh
 flask init-db
@@ -104,7 +114,7 @@ flask init-db
 This will create an index called `charityaccounts`. You can check it exists after this by 
 visiting <http://localhost:9200/charityaccounts>.
 
-### Step 8 - run the app
+### Step 9 - run the app
 
 ```sh
 flask run
