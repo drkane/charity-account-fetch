@@ -53,21 +53,19 @@ class CharityCommissionAPI:
             self._add_endpoint_function(name, path)
 
     def _add_endpoint_function(self, name, path):
-
         def return_endpoint(self, **kwargs):
             # default suffix to 0 if not provided
             if "{suffix}" in path and "suffix" not in kwargs:
                 kwargs["suffix"] = 0
-            return self._get_request(
-                self.base_url + path.format(**kwargs)
-            )
+            return self._get_request(self.base_url + path.format(**kwargs))
+
         meth = types.MethodType(return_endpoint, self)
         setattr(self, name, meth)
 
     def _auth_headers(self):
         return {
-            'Cache-Control': 'no-cache',
-            'Ocp-Apim-Subscription-Key': self.auth_key,
+            "Cache-Control": "no-cache",
+            "Ocp-Apim-Subscription-Key": self.auth_key,
         }
 
     def _get_request(self, url):

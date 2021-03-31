@@ -13,20 +13,19 @@ def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
-        SECRET_KEY='dev',
-        ES_URL=os.environ.get('ELASTICSEARCH_URL'),
-        ES_INDEX='charityaccounts',
+        SECRET_KEY="dev",
+        ES_URL=os.environ.get("ELASTICSEARCH_URL"),
+        ES_INDEX="charityaccounts",
         CHARITYBASE_API_URL=os.environ.get(
-            'CHARITYBASE_API_URL',
-            'https://charitybase.uk/api/graphql'
+            "CHARITYBASE_API_URL", "https://charitybase.uk/api/graphql"
         ),
-        CHARITYBASE_API_KEY=os.environ.get('CHARITYBASE_API_KEY'),
-        CCEW_API_KEY=os.environ.get('CCEW_API_KEY'),
+        CHARITYBASE_API_KEY=os.environ.get("CHARITYBASE_API_KEY"),
+        CCEW_API_KEY=os.environ.get("CCEW_API_KEY"),
     )
 
     if test_config is None:
         # load the instance config, if it exists, when not testing
-        app.config.from_pyfile('config.py', silent=True)
+        app.config.from_pyfile("config.py", silent=True)
     else:
         # load the test config if passed in
         app.config.from_mapping(test_config)
@@ -47,11 +46,11 @@ def create_app(test_config=None):
             now=datetime.datetime.now(),
         )
 
-    @app.template_filter('highlight')
+    @app.template_filter("highlight")
     def highlight_filter(s, q):
         return add_highlights(s, q)[0]
 
-    @app.template_filter('dateformat')
+    @app.template_filter("dateformat")
     def dateformat_filter(d, f="%Y-%m-%d", o=None):
         return parse_datetime(d, f, o)
 

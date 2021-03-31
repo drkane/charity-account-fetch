@@ -7,17 +7,15 @@ from graphqlclient import GraphQLClient
 from docdisplay.db import get_db
 from docdisplay.fetch import ccew_list_accounts
 
-CC_ACCOUNT_FILENAME = r'([0-9]+)_AC_([0-9]{4})([0-9]{2})([0-9]{2})_E_C.PDF'
+CC_ACCOUNT_FILENAME = r"([0-9]+)_AC_([0-9]{4})([0-9]{2})([0-9]{2})_E_C.PDF"
 
-bp = Blueprint('charity', __name__, url_prefix='/charity')
+bp = Blueprint("charity", __name__, url_prefix="/charity")
 
 
 def get_charity(regno):
-    client = GraphQLClient(current_app.config.get('CHARITYBASE_API_URL'))
-    client.inject_token(
-        'Apikey ' + current_app.config.get('CHARITYBASE_API_KEY')
-    )
-    query = '''
+    client = GraphQLClient(current_app.config.get("CHARITYBASE_API_URL"))
+    client.inject_token("Apikey " + current_app.config.get("CHARITYBASE_API_KEY"))
+    query = """
     query fetchCharities($regno:ID){
         CHC {
             getCharities(filters: {id: [$regno]}) {
@@ -37,11 +35,12 @@ def get_charity(regno):
             }
         }
     }
-    '''
-    result = client.execute(query, {'regno': regno})
+    """
+    result = client.execute(query, {"regno": regno})
     result = json.loads(result)
-    result = result.get('data', {}).get('CHC', {})\
-                   .get('getCharities', {}).get('list', [])
+    result = (
+        result.get("data", {}).get("CHC", {}).get("getCharities", {}).get("list", [])
+    )
     if result:
         return result[0]
 
@@ -49,11 +48,9 @@ def get_charity(regno):
 def search_charities(q, limit=20, skip=0):
     if not q:
         return []
-    client = GraphQLClient(current_app.config.get('CHARITYBASE_API_URL'))
-    client.inject_token(
-        'Apikey ' + current_app.config.get('CHARITYBASE_API_KEY')
-    )
-    query = '''
+    client = GraphQLClient(current_app.config.get("CHARITYBASE_API_URL"))
+    client.inject_token("Apikey " + current_app.config.get("CHARITYBASE_API_KEY"))
+    query = """
     query fetchCharities($q:String, $limit:PageLimit, $skip:Int){
         CHC {
             getCharities(filters: {search:$q}) {
@@ -73,26 +70,33 @@ def search_charities(q, limit=20, skip=0):
             }
         }
     }
-    '''
-    result = client.execute(query, {
-        'q': q,
-        'limit': limit,
-        'skip': skip,
-    })
+    """
+    result = client.execute(
+        query,
+        {
+            "q": q,
+            "limit": limit,
+            "skip": skip,
+        },
+    )
     result = json.loads(result)
     return {
-        "count": result.get('data', {}).get('CHC', {})
-                       .get('getCharities', {}).get('count', 0),
-        "results": result.get('data', {}).get('CHC', {})
-                         .get('getCharities', {}).get('list', [])
+        "count": result.get("data", {})
+        .get("CHC", {})
+        .get("getCharities", {})
+        .get("count", 0),
+        "results": result.get("data", {})
+        .get("CHC", {})
+        .get("getCharities", {})
+        .get("list", []),
     }
 
 
-@bp.route('/search')
+@bp.route("/search")
 def charity_search():
-    q = request.values.get('q')
+    q = request.values.get("q")
     try:
-        p = int(request.values.get('p', 1))
+        p = int(request.values.get("p", 1))
     except ValueError:
         p = 1
     limit = 10
@@ -101,87 +105,63 @@ def charity_search():
     results = search_charities(q, limit, skip)
     nav = {
         "first_result": ((p - 1) * limit) + 1,
-        "last_result": min([p * limit, results['count']]),
+        "last_result": min([p * limit, results["count"]]),
         "current_page": p,
-        'first_page': 1,
-        'last_page': math.ceil(results["count"] / limit),
+        "first_page": 1,
+        "last_page": math.ceil(results["count"] / limit),
     }
 
-    if results['count'] > nav['last_result']:
-        nav['last'] = url_for(
-            'charity.charity_search',
-            q=q,
-            p=nav['last_page']
-        )
-        nav['next'] = url_for('charity.charity_search', q=q, p=p + 1)
+    if results["count"] > nav["last_result"]:
+        nav["last"] = url_for("charity.charity_search", q=q, p=nav["last_page"])
+        nav["next"] = url_for("charity.charity_search", q=q, p=p + 1)
     if p > 2:
-        nav['prev'] = url_for('charity.charity_search', q=q, p=p - 1)
-        nav['first'] = url_for(
-            'charity.charity_search',
-            q=q,
-            p=nav['first_page']
-        )
+        nav["prev"] = url_for("charity.charity_search", q=q, p=p - 1)
+        nav["first"] = url_for("charity.charity_search", q=q, p=nav["first_page"])
 
     return render_template(
-        'charity_search.html',
+        "charity_search.html",
         results=results,
-        q=request.values.get('q', ''),
+        q=request.values.get("q", ""),
         nav=nav,
     )
 
 
-@bp.route('/<regno>')
-@bp.route('/<regno>.<filetype>')
-def charity_get(regno, filetype='html'):
+@bp.route("/<regno>")
+@bp.route("/<regno>.<filetype>")
+def charity_get(regno, filetype="html"):
     es = get_db()
     documents = es.search(
-        index=current_app.config.get('ES_INDEX'),
-        doc_type='_doc',
-        _source_includes=['regno', 'fye'],
-        body={
-            "query": {
-                "term": {
-                    "regno": regno
-                }
-            }
-        }
+        index=current_app.config.get("ES_INDEX"),
+        doc_type="_doc",
+        _source_includes=["regno", "fye"],
+        body={"query": {"term": {"regno": regno}}},
     )
     documents = {
         d["_source"]["fye"][0:10]: {
             "doc_id": d.get("_id"),
-            "doc_url": url_for('doc.doc_get', id=d.get('_id'))
+            "doc_url": url_for("doc.doc_get", id=d.get("_id")),
         }
-        for d in documents.get('hits', {}).get("hits", [])
+        for d in documents.get("hits", {}).get("hits", [])
         if d.get("_source", {}).get("fye")
     }
 
     accounts = ccew_list_accounts(regno)
-    accounts = {
-        "{:%Y-%m-%d}".format(a['fyend']): a
-        for a in accounts
-    }
+    accounts = {"{:%Y-%m-%d}".format(a["fyend"]): a for a in accounts}
     charity = get_charity(regno)
-    charity['finances'] = [
+    charity["finances"] = [
         {
             **f,
-            **accounts.get(f['financialYear']['end'][0:10], {}),
-            **documents.get(f['financialYear']['end'][0:10], {}),
-            'fyend': f['financialYear']['end'][0:10],
+            **accounts.get(f["financialYear"]["end"][0:10], {}),
+            **documents.get(f["financialYear"]["end"][0:10], {}),
+            "fyend": f["financialYear"]["end"][0:10],
         }
-        for f in charity['finances']
+        for f in charity["finances"]
     ]
-    if filetype == 'json':
+    if filetype == "json":
         return {
-            'data': dict(
-                results=accounts,
-                charity=charity,
-                regno=regno
-            ),
-            'errors': []
+            "data": dict(results=accounts, charity=charity, regno=regno),
+            "errors": [],
         }
     return render_template(
-        'charity.html',
-        results=accounts,
-        charity=charity,
-        regno=regno
+        "charity.html", results=accounts, charity=charity, regno=regno
     )

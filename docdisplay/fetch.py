@@ -19,7 +19,7 @@ CCEW_URL = "https://register-of-charities.charitycommission.gov.uk/charity-searc
 
 
 def get_charity_url(regno):
-    api = CharityCommissionAPI(current_app.config.get('CCEW_API_KEY'))
+    api = CharityCommissionAPI(current_app.config.get("CCEW_API_KEY"))
     org_details = api.GetCharityDetails(RegisteredNumber=regno)
     return CCEW_URL.format(org_details["organisation_number"])
 
@@ -212,7 +212,10 @@ def download_account_parser(regno: str, fyend: date, destination: str = ".", **k
     (if not found then the latest accounts will be used)""",
 )
 @click.option(
-    "--destination", type=click.Path(), default=".", help="Folder in which to save accounts"
+    "--destination",
+    type=click.Path(),
+    default=".",
+    help="Folder in which to save accounts",
 )
 @click.option("--logfile", type=click.Path(), help="File to output results")
 @click.option(
@@ -280,9 +283,7 @@ def download_from_csv(
                     session=session,
                 )
             else:
-                result = {
-                    "error": "no accounts found"
-                }
+                result = {"error": "no accounts found"}
 
         if logfile:
             with open(logfile, "a", newline="") as logf:

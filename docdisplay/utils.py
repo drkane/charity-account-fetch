@@ -9,8 +9,7 @@ class HighlightNumbers(object):
     def __call__(self, match):
         self.count += 1
         return '<span class="bg-yellow" id="match-{}">{}</span>'.format(
-            self.count,
-            match.group(1)
+            self.count, match.group(1)
         )
 
 
@@ -19,12 +18,7 @@ def add_highlights(s, q):
         return (s, 0)
     qs = q.split()
     h = HighlightNumbers()
-    s = re.sub(
-        r'({})'.format("|".join(qs)),
-        h,
-        s,
-        flags=re.IGNORECASE
-    )
+    s = re.sub(r"({})".format("|".join(qs)), h, s, flags=re.IGNORECASE)
     return (s, h.count)
 
 
@@ -34,10 +28,7 @@ def filesize_text_to_int(filesize: str) -> int:
 
     Sizes are generally in the format "(12,345KB)"
     """
-    filesize = filesize.replace("(", "")\
-                       .replace(")", "")\
-                       .replace(",", "")\
-                       .upper()
+    filesize = filesize.replace("(", "").replace(")", "").replace(",", "").upper()
     if "KB" in filesize:
         return int(filesize.replace("KB", "")) * 1024
     elif "KIB" in filesize:
