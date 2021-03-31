@@ -2,6 +2,7 @@ import os
 from datetime import date, datetime
 import csv
 import logging
+import re
 
 import click
 from flask import current_app
@@ -49,13 +50,15 @@ def ccew_list_accounts(regno: str, session=HTMLSession()) -> list:
             continue
         if not cells[-1].find("a"):
             continue
-        accounts.append(
-            {
-                "url": cells[-1].find("a", first=True).attrs["href"],
-                "fyend": dateutil.parser.parse(cell_text[1]).date(),
-                "size": None,
-            }
-        )
+        date_string = re.match(r"([0-9]{1,2} [A-Za-z]+ [0-9]{4})", cell_text[1])
+        if date_string:
+            accounts.append(
+                {
+                    "url": cells[-1].find("a", first=True).attrs["href"],
+                    "fyend": dateutil.parser.parse(date_string.group()).date(),
+                    "size": None,
+                }
+            )
     return sorted(accounts, key=lambda x: x["fyend"], reverse=True)
 
 
