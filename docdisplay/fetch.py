@@ -3,6 +3,7 @@ from datetime import date, datetime
 import csv
 import logging
 import re
+import sys
 
 import click
 from flask import current_app
@@ -18,9 +19,15 @@ fetch_cli = AppGroup("fetch")
 CCEW_URL = "https://register-of-charities.charitycommission.gov.uk/charity-search/-/charity-details/{}/accounts-and-annual-returns"
 
 
+class CharityFetchError(Exception):
+    pass
+
+
 def get_charity_url(regno):
     api = CharityCommissionAPI(current_app.config.get("CCEW_API_KEY"))
     org_details = api.GetCharityDetails(RegisteredNumber=regno)
+    if "organisation_number" not in org_details:
+        raise CharityFetchError("Charity {} not found".format(regno))
     return CCEW_URL.format(org_details["organisation_number"])
 
 
@@ -101,6 +108,8 @@ def download_account(
         "file_name": filename,
         "file_size": len(r.content),
         "download_timetaken": r.elapsed.total_seconds(),
+        "regno": regno,
+        "fyend": fyend,
     }
 
 
@@ -245,58 +254,81 @@ def download_from_csv(
         "file_name",
         "file_size",
         "download_timetaken",
+        "regno",
+        "fyend",
     ]
+
+    def get_csv_row(row, regno, fyend):
+        accounts = ccew_list_accounts(regno, session=session)
+        urls = {account["fyend"]: account["url"] for account in accounts}
+        if fyend and accounts:
+            fyend = parse_datetime(fyend)
+            if fyend not in urls:
+                raise CharityFetchError("Financial year end not found")
+            return download_account(
+                urls[fyend],
+                regno=regno,
+                fyend=fyend,
+                destination=destination,
+                session=session,
+            )
+        elif accounts:
+            return download_account(
+                accounts[0]["url"],
+                regno=regno,
+                fyend=accounts[0]["fyend"],
+                destination=destination,
+                session=session,
+            )
+        raise CharityFetchError("No accounts found for charity {}".format(regno))
+
+    if logfile:
+        logf = open(logfile, "a", newline="")
+    else:
+        logf = sys.stdout
+    writer = csv.writer(logf)
 
     for k, row in enumerate(reader):
 
-        if logfile and k == 0:
-            with open(logfile, "w", newline="") as logf:
-                writer = csv.writer(logf)
-                writer.writerow(
-                    [h for h in row.keys() if h not in logging_fields] + logging_fields
-                )
+        if logf and k == 0:
+            writer.writerow(
+                [h for h in row.keys() if h not in logging_fields] + logging_fields
+            )
+
+        regno = row[regno_column]
+        fyend = row.get(fyend_column)
 
         if skip_rows and skip_rows > k:
-            result = {"error": "Row skipped"}
+            result = {
+                "error": "Row skipped",
+                "regno": regno,
+                "fyend": fyend,
+            }
 
         else:
-            regno = row[regno_column]
-            fyend = row.get(fyend_column)
-            result = {}
-            accounts = ccew_list_accounts(regno, session=session)
-            urls = {account["fyend"]: account["url"] for account in accounts}
-            if fyend and urls.get(fyend):
-                fyend = parse_datetime(fyend)
-                result = download_account(
-                    urls[fyend],
-                    regno=regno,
-                    fyend=fyend,
-                    destination=destination,
-                    session=session,
-                )
-            elif accounts:
-                result = download_account(
-                    accounts[0]["url"],
-                    regno=regno,
-                    fyend=accounts[0]["fyend"],
-                    destination=destination,
-                    session=session,
-                )
-            else:
-                result = {"error": "no accounts found"}
+            try:
+                result = get_csv_row(row, regno, fyend)
+            except CharityFetchError as err:
+                result = {
+                    "error": str(err),
+                    "regno": regno,
+                    "fyend": fyend,
+                }
 
-        if logfile:
-            with open(logfile, "a", newline="") as logf:
-                writer = csv.writer(logf)
-                writer.writerow(
-                    [v for h, v in row.items() if h not in logging_fields]
-                    + [
-                        result.get("file_location") is not None,
-                        result.get("error"),
-                        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                        result.get("file_location"),
-                        result.get("file_name"),
-                        result.get("file_size"),
-                        result.get("download_timetaken"),
-                    ]
-                )
+        writer.writerow(
+            [v for h, v in row.items() if h not in logging_fields]
+            + [
+                result.get("file_location") is not None,
+                result.get("error"),
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                result.get("file_location"),
+                result.get("file_name"),
+                result.get("file_size"),
+                result.get("download_timetaken"),
+                result.get("regno"),
+                result.get("fyend"),
+            ]
+        )
+
+    if logfile:
+        logf.close()
