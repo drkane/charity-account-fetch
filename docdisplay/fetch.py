@@ -308,7 +308,7 @@ def download_from_csv(
         else:
             try:
                 result = get_csv_row(row, regno, fyend)
-            except CharityFetchError as err:
+            except Exception as err:
                 result = {
                     "error": str(err),
                     "regno": regno,
