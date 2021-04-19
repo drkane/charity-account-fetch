@@ -1,4 +1,5 @@
 import os
+from collections import namedtuple
 from datetime import date, datetime
 import csv
 import logging
@@ -16,19 +17,105 @@ from docdisplay.utils import parse_datetime
 from docdisplay.cc_api import CharityCommissionAPI
 
 fetch_cli = AppGroup("fetch")
-CCEW_URL = "https://register-of-charities.charitycommission.gov.uk/charity-search/-/charity-details/{}/accounts-and-annual-returns"
+
+
+Account = namedtuple('Account', ['url', 'fyend', 'regno', 'size'], defaults=[None])
 
 
 class CharityFetchError(Exception):
     pass
 
 
-def get_charity_url(regno):
-    api = CharityCommissionAPI(current_app.config.get("CCEW_API_KEY"))
-    org_details = api.GetCharityDetails(RegisteredNumber=regno)
-    if "organisation_number" not in org_details:
-        raise CharityFetchError("Charity {} not found".format(regno))
-    return CCEW_URL.format(org_details["organisation_number"])
+class CCEW:
+
+    name = 'ccew'
+    url_base = "https://register-of-charities.charitycommission.gov.uk/charity-search/-/charity-details/{}/accounts-and-annual-returns"
+    date_regex = r"([0-9]{1,2} [A-Za-z]+ [0-9]{4})"
+
+    def __init__(self, api_key):
+        self.api_key = api_key
+
+    def get_charity_url(self, regno):
+        api = CharityCommissionAPI(self.api_key)
+        org_details = api.GetCharityDetails(RegisteredNumber=regno)
+        if "organisation_number" not in org_details:
+            raise CharityFetchError("Charity {} not found".format(regno))
+        return self.url_base.format(org_details["organisation_number"])
+
+    def list_accounts(self, regno: str, session=HTMLSession()) -> list:
+        """
+        List accounts for a charity
+        """
+        url = self.get_charity_url(regno)
+        logging.debug("Fetching account list: {}".format(url))
+
+        r = session.get(url)
+        accounts = []
+        for tr in r.html.find("tr.govuk-table__row"):
+            cells = list(tr.find("td"))
+            cell_text = [c.text.strip() if c.text else "" for c in cells]
+            if not cell_text or "accounts" not in cell_text[0].lower():
+                continue
+            if not cells[-1].find("a"):
+                continue
+            date_string = re.match(self.date_regex, cell_text[1])
+            if date_string:
+                accounts.append(
+                    Account(
+                        regno=regno,
+                        url=cells[-1].find("a", first=True).attrs["href"],
+                        fyend=dateutil.parser.parse(date_string.group()).date(),
+                    )
+                )
+        return sorted(accounts, key=lambda x: x.fyend, reverse=True)
+
+
+class CCNI:
+
+    name = 'ccni'
+    url_base = "https://www.charitycommissionni.org.uk/charity-details/?regId={}&subId=0"
+    date_regex = r"([0-9]{1,2} [A-Za-z]+ [0-9]{4})"
+    account_url_regex = r"https://apps.charitycommission.gov.uk/ccni_ar_attachments/([0-9]+)_([0-9]+)_CA.pdf"
+
+    def get_charity_url(self, regno):
+        regno = regno.lstrip("NI")
+        return self.url_base.format(regno)
+
+    def list_accounts(self, regno: str, session=HTMLSession()) -> list:
+        """
+        List accounts for a charity
+        """
+        url = self.get_charity_url(regno)
+        logging.debug("Fetching account list: {}".format(url))
+
+        r = session.get(url)
+        accounts = []
+        for link in r.html.find("article#documents a"):
+            if not link.attrs["href"].endswith("_CA.pdf"):
+                continue
+            match = re.match(self.account_url_regex, link.attrs["href"])
+            if not match:
+                continue
+            accounts.append(
+                Account(
+                    regno=match.group(1).lstrip("0"),
+                    url=link.attrs["href"],
+                    fyend=dateutil.parser.parse(match.group(2)).date(),
+                )
+            )
+        return sorted(accounts, key=lambda x: x.fyend, reverse=True)
+
+
+class OSCR:
+    pass
+
+
+def get_charity_type(regno):
+    if regno.startswith("SC"):
+        return OSCR()
+    if regno.startswith("NI"):
+        return CCNI()
+    return CCEW(api_key=current_app.config.get("CCEW_API_KEY"))
 
 
 class StripLinkText(str):
@@ -39,34 +126,6 @@ class StripLinkText(str):
 def print_header(s: str, underline: str = "="):
     print(s)
     print(underline * len(s))
-
-
-def ccew_list_accounts(regno: str, session=HTMLSession()) -> list:
-    """
-    List accounts for a charity
-    """
-    url = get_charity_url(regno)
-    logging.debug("Fetching account list: {}".format(url))
-
-    r = session.get(url)
-    accounts = []
-    for tr in r.html.find("tr.govuk-table__row"):
-        cells = list(tr.find("td"))
-        cell_text = [c.text.strip() if c.text else "" for c in cells]
-        if not cell_text or "accounts" not in cell_text[0].lower():
-            continue
-        if not cells[-1].find("a"):
-            continue
-        date_string = re.match(r"([0-9]{1,2} [A-Za-z]+ [0-9]{4})", cell_text[1])
-        if date_string:
-            accounts.append(
-                {
-                    "url": cells[-1].find("a", first=True).attrs["href"],
-                    "fyend": dateutil.parser.parse(date_string.group()).date(),
-                    "size": None,
-                }
-            )
-    return sorted(accounts, key=lambda x: x["fyend"], reverse=True)
 
 
 def download_account(
@@ -122,22 +181,23 @@ def list_accounts_for_download(regno: str, destination: str = ".", **kwargs: dic
     \b
     REGNO is the charity number
     """
-    accounts = ccew_list_accounts(regno)
+    source = get_charity_type(regno)
+    accounts = source.list_accounts(regno)
     if not accounts:
         print("No accounts found for charity number {}".format(regno))
         exit()
     print()
     print_header("Accounts for charity number {}".format(regno))
     for k, a in enumerate(accounts):
-        print("{}: {:%Y-%m-%d}".format(k + 1, a["fyend"]))
+        print("{}: {:%Y-%m-%d}".format(k + 1, a.fyend))
 
     print("Enter account number to download:")
     to_download = input()
     to_download = int(to_download) - 1
     download_account(
-        accounts[to_download]["url"],
+        accounts[to_download].url,
         regno=regno,
-        fyend=accounts[to_download]["fyend"],
+        fyend=accounts[to_download].fyend,
         destination=destination,
     )
 
@@ -151,11 +211,12 @@ def download_latest_account(regno: str, destination: str = ".", **kwargs: dict):
     \b
     REGNO is the charity number
     """
-    accounts = ccew_list_accounts(regno)
+    source = get_charity_type(regno)
+    accounts = source.list_accounts(regno)
     download_account(
-        accounts[0]["url"],
+        accounts[0].url,
         regno=regno,
-        fyend=accounts[0]["fyend"],
+        fyend=accounts[0].fyend,
         destination=destination,
     )
 
@@ -170,12 +231,13 @@ def download_all_accounts(regno: str, destination: str = ".", **kwargs: dict):
     REGNO is the charity number
     """
     session = HTMLSession()
-    accounts = ccew_list_accounts(regno, session=session)
+    source = get_charity_type(regno)
+    accounts = source.list_accounts(regno, session=session)
     for a in accounts:
         download_account(
-            a["url"],
+            a.url,
             regno=regno,
-            fyend=a["fyend"],
+            fyend=a.fyend,
             destination=destination,
             session=session,
         )
@@ -193,11 +255,12 @@ def download_account_parser(regno: str, fyend: date, destination: str = ".", **k
     FYEND is the financial year end of the accounts (format YYYY-MM-DD)
     """
     session = HTMLSession()
-    accounts = ccew_list_accounts(regno, session=session)
+    source = get_charity_type(regno)
+    accounts = source.list_accounts(regno, session=session)
     for account in accounts:
-        if account["fyend"] == fyend:
+        if account.fyend == fyend:
             download_account(
-                account["url"],
+                account.url,
                 regno=regno,
                 fyend=fyend,
                 destination=destination,
@@ -259,8 +322,9 @@ def download_from_csv(
     ]
 
     def get_csv_row(row, regno, fyend):
-        accounts = ccew_list_accounts(regno, session=session)
-        urls = {account["fyend"]: account["url"] for account in accounts}
+        source = get_charity_type(regno)
+        accounts = source.list_accounts(regno, session=session)
+        urls = {account.fyend: account.url for account in accounts}
         if fyend and accounts:
             fyend = parse_datetime(fyend)
             if fyend not in urls:
@@ -274,9 +338,9 @@ def download_from_csv(
             )
         elif accounts:
             return download_account(
-                accounts[0]["url"],
+                accounts[0].url,
                 regno=regno,
-                fyend=accounts[0]["fyend"],
+                fyend=accounts[0].fyend,
                 destination=destination,
                 session=session,
             )

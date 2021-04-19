@@ -5,7 +5,7 @@ from flask import Blueprint, render_template, current_app, request, url_for
 from graphqlclient import GraphQLClient
 
 from docdisplay.db import get_db
-from docdisplay.fetch import ccew_list_accounts
+from docdisplay.fetch import get_charity_type, Account
 
 CC_ACCOUNT_FILENAME = r"([0-9]+)_AC_([0-9]{4})([0-9]{2})([0-9]{2})_E_C.PDF"
 
@@ -145,13 +145,14 @@ def charity_get(regno, filetype="html"):
         if d.get("_source", {}).get("fye")
     }
 
-    accounts = ccew_list_accounts(regno)
-    accounts = {"{:%Y-%m-%d}".format(a["fyend"]): a for a in accounts}
+    source = get_charity_type(regno)
+    accounts = source.list_accounts(regno)
+    accounts = {"{:%Y-%m-%d}".format(a.fyend): a for a in accounts}
     charity = get_charity(regno)
     charity["finances"] = [
         {
             **f,
-            **accounts.get(f["financialYear"]["end"][0:10], {}),
+            **accounts.get(f["financialYear"]["end"][0:10], Account(None, regno, f["financialYear"]["end"][0:10]))._asdict(),
             **documents.get(f["financialYear"]["end"][0:10], {}),
             "fyend": f["financialYear"]["end"][0:10],
         }
