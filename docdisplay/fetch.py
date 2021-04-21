@@ -132,7 +132,7 @@ class OSCR:
             if len(cells) != 6:
                 continue
             links = list(cells[5].absolute_links)
-            if not links or links[0] == "https://beta.companieshouse.gov.uk":
+            if not links or links[0] in ("https://beta.companieshouse.gov.uk", "https://www.gov.uk/government/organisations/charity-commission"):
                 continue
             accounts.append(
                 Account(
