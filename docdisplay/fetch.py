@@ -107,7 +107,41 @@ class CCNI:
 
 
 class OSCR:
-    pass
+    name = 'oscr'
+    url_base = "https://www.oscr.org.uk/about-charities/search-the-register/charity-details?number={}"
+
+    def get_charity_url(self, regno):
+        regno = int(regno.lstrip("SC").lstrip("0"))
+        return self.url_base.format(regno)
+
+    def list_accounts(self, regno: str, session=HTMLSession()) -> list:
+        """
+        List accounts for a charity
+        """
+        url = self.get_charity_url(regno)
+        logging.debug("Fetching account list: {}".format(url))
+
+        r = session.get(url)
+        accounts = []
+        for tr in r.html.find(".history table tr"):
+            cells = tr.find("td")
+            try:
+                fyend = dateutil.parser.parse(cells[0].text).date()
+            except dateutil.parser.ParserError:
+                continue
+            if len(cells) != 6:
+                continue
+            links = list(cells[5].absolute_links)
+            if not links or links[0] == "https://beta.companieshouse.gov.uk":
+                continue
+            accounts.append(
+                Account(
+                    regno=regno,
+                    url=links[0],
+                    fyend=fyend,
+                )
+            )
+        return sorted(accounts, key=lambda x: x.fyend, reverse=True)
 
 
 def get_charity_type(regno):
