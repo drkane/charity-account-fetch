@@ -121,3 +121,15 @@ flask run
 ```
 
 It should now be available from <http://localhost:5000/>.
+
+## Uploading documents
+
+It's possible to upload documents through the web app using <http://localhost:5000/doc/upload>.
+
+You can also use the command line through the command:
+
+```sh
+flask doc upload NI100002_20200331.pdf
+```
+
+The command line expects the filename to be in the correct format `<regno>_<fyend>.pdf`. Where `<fyend>` is in format `YYYYMMDD`.

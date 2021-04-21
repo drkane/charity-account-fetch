@@ -3,6 +3,7 @@ import re
 import datetime
 import math
 
+import click
 from flask import (
     Blueprint,
     render_template,
@@ -272,3 +273,35 @@ def doc_upload(filetype="html"):
         return redirect(url_for("doc.doc_get", id=result.get("_id")))
 
     return render_template("doc_upload.html")
+
+
+@bp.cli.command('upload')
+@click.argument('pdffile', type=click.File('rb'))
+def cli_upload(pdffile):
+    regno, fyend = pdffile.name.rstrip(".pdf").split("_")
+    fyend = datetime.date(
+        int(fyend[0:4]),
+        int(fyend[4:6]),
+        int(fyend[6:8]),
+    )
+    charity = {
+        "regno": regno,
+        "fye": fyend,
+        # "name": request.values.get("name"),
+        # "income": request.values.get("income"),
+        # "spending": request.values.get("spending"),
+        # "assets": request.values.get("assets"),
+    }
+    click.echo(f"Uploading document: {pdffile.name}")
+    result = upload_doc(
+        charity,
+        pdffile.read(),
+        get_db()
+    )
+    if result["result"] in ("created"):
+        click.echo(click.style(f"Document uploaded: {pdffile.name}", fg='green'))
+    elif result["result"] in ("updated"):
+        click.echo(click.style(f"Document updated: {pdffile.name}", fg='green'))
+    else:
+        click.echo(click.style(f"ERROR Could not upload document: {pdffile.name}", fg='white', bg='red'), err=True)
+        print(result)
