@@ -12,6 +12,7 @@ from flask.cli import AppGroup
 import requests
 import dateutil.parser
 from requests_html import HTMLSession
+from tqdm import tqdm
 
 from docdisplay.utils import parse_datetime
 from docdisplay.cc_api import CharityCommissionAPI
@@ -19,7 +20,7 @@ from docdisplay.cc_api import CharityCommissionAPI
 fetch_cli = AppGroup("fetch")
 
 
-Account = namedtuple('Account', ['url', 'fyend', 'regno', 'size'], defaults=[None])
+Account = namedtuple("Account", ["url", "fyend", "regno", "size"], defaults=[None])
 
 
 class CharityFetchError(Exception):
@@ -28,7 +29,7 @@ class CharityFetchError(Exception):
 
 class CCEW:
 
-    name = 'ccew'
+    name = "ccew"
     url_base = "https://register-of-charities.charitycommission.gov.uk/charity-search/-/charity-details/{}/accounts-and-annual-returns"
     date_regex = r"([0-9]{1,2} [A-Za-z]+ [0-9]{4})"
 
@@ -36,6 +37,7 @@ class CCEW:
         self.api_key = api_key
 
     def get_charity_url(self, regno):
+        regno = regno.lstrip("GB-CHC-")
         api = CharityCommissionAPI(self.api_key)
         org_details = api.GetCharityDetails(RegisteredNumber=regno)
         if "organisation_number" not in org_details:
@@ -72,13 +74,15 @@ class CCEW:
 
 class CCNI:
 
-    name = 'ccni'
-    url_base = "https://www.charitycommissionni.org.uk/charity-details/?regId={}&subId=0"
+    name = "ccni"
+    url_base = (
+        "https://www.charitycommissionni.org.uk/charity-details/?regId={}&subId=0"
+    )
     date_regex = r"([0-9]{1,2} [A-Za-z]+ [0-9]{4})"
     account_url_regex = r"https://apps.charitycommission.gov.uk/ccni_ar_attachments/([0-9]+)_([0-9]+)_CA.pdf"
 
     def get_charity_url(self, regno):
-        regno = regno.lstrip("NI")
+        regno = regno.lstrip("GB-NIC-").lstrip("NI")
         return self.url_base.format(regno)
 
     def list_accounts(self, regno: str, session=HTMLSession()) -> list:
@@ -107,11 +111,11 @@ class CCNI:
 
 
 class OSCR:
-    name = 'oscr'
+    name = "oscr"
     url_base = "https://www.oscr.org.uk/about-charities/search-the-register/charity-details?number={}"
 
     def get_charity_url(self, regno):
-        regno = int(regno.lstrip("SC").lstrip("0"))
+        regno = int(regno.lstrip("GB-SC-").lstrip("SC").lstrip("0"))
         return self.url_base.format(regno)
 
     def list_accounts(self, regno: str, session=HTMLSession()) -> list:
@@ -132,7 +136,10 @@ class OSCR:
             if len(cells) != 6:
                 continue
             links = list(cells[5].absolute_links)
-            if not links or links[0] in ("https://beta.companieshouse.gov.uk", "https://www.gov.uk/government/organisations/charity-commission"):
+            if not links or links[0] in (
+                "https://beta.companieshouse.gov.uk",
+                "https://www.gov.uk/government/organisations/charity-commission",
+            ):
                 continue
             accounts.append(
                 Account(
@@ -145,9 +152,9 @@ class OSCR:
 
 
 def get_charity_type(regno):
-    if regno.startswith("SC"):
+    if regno.startswith("SC") or regno.startswith("GB-SC-"):
         return OSCR()
-    if regno.startswith("NI"):
+    if regno.startswith("NI") or regno.startswith("GB-NIC-"):
         return CCNI()
     return CCEW(api_key=current_app.config.get("CCEW_API_KEY"))
 
@@ -380,17 +387,21 @@ def download_from_csv(
             )
         raise CharityFetchError("No accounts found for charity {}".format(regno))
 
-    if logfile:
-        logf = open(logfile, "a", newline="")
-    else:
-        logf = sys.stdout
-    writer = csv.writer(logf)
+    def write_logfile(row, mode="a"):
+        if logfile:
+            logf = open(logfile, mode, newline="")
+        else:
+            logf = sys.stdout
+        writer = csv.writer(logf)
+        writer.writerow(row)
+        logf.close()
 
-    for k, row in enumerate(reader):
+    for k, row in tqdm(enumerate(reader)):
 
-        if logf and k == 0:
-            writer.writerow(
-                [h for h in row.keys() if h not in logging_fields] + logging_fields
+        if k == 0:
+            write_logfile(
+                [h for h in row.keys() if h not in logging_fields] + logging_fields,
+                mode="w",
             )
 
         regno = row[regno_column]
@@ -413,7 +424,7 @@ def download_from_csv(
                     "fyend": fyend,
                 }
 
-        writer.writerow(
+        write_logfile(
             [v for h, v in row.items() if h not in logging_fields]
             + [
                 result.get("file_location") is not None,
@@ -427,6 +438,3 @@ def download_from_csv(
                 result.get("fyend"),
             ]
         )
-
-    if logfile:
-        logf.close()

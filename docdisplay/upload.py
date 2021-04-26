@@ -1,9 +1,14 @@
 import io
 import base64
 import datetime
+import sys
 
 from flask import current_app
 import pdfplumber
+
+
+class DocumentUploadError(Exception):
+    pass
 
 
 def convert_file(source):
@@ -15,6 +20,8 @@ def convert_file(source):
                 if p.extract_text()
             ]
         )
+        if not content:
+            raise DocumentUploadError("No content found in PDF")
         return {
             "content": content,
             "content_length": len(content),
@@ -28,7 +35,17 @@ def convert_file(source):
 def upload_doc(charity, content, es):
     id_ = "{}-{:%Y%m%d}".format(charity["regno"], charity["fye"])
     filename = id_ + ".pdf"
-    attachment = convert_file(io.BytesIO(content))
+    try:
+        attachment = convert_file(io.BytesIO(content))
+    except Exception as err:
+        exc_type, value, traceback = sys.exc_info()
+        return {
+            "_index": current_app.config.get("ES_INDEX"),
+            "_type": "_doc",
+            "_id": id_,
+            "result": "error",
+            "error": f"{exc_type.__name__}: {str(err)}",
+        }
 
     return es.index(
         index=current_app.config.get("ES_INDEX"),

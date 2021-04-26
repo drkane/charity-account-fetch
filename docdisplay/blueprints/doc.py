@@ -2,6 +2,9 @@ import base64
 import re
 import datetime
 import math
+import os
+from pathlib import Path
+import sys
 
 import click
 from flask import (
@@ -18,10 +21,11 @@ from flask import (
 from werkzeug.utils import secure_filename
 import requests
 import requests_cache
+from tqdm import tqdm
 
 from docdisplay.db import get_db
 from docdisplay.utils import add_highlights
-from docdisplay.upload import upload_doc
+from docdisplay.upload import upload_doc, convert_file
 
 requests_cache.install_cache("demo_cache")
 
@@ -276,32 +280,74 @@ def doc_upload(filetype="html"):
 
 
 @bp.cli.command('upload')
-@click.argument('pdffile', type=click.File('rb'))
-def cli_upload(pdffile):
-    regno, fyend = pdffile.name.rstrip(".pdf").split("_")
-    fyend = datetime.date(
-        int(fyend[0:4]),
-        int(fyend[4:6]),
-        int(fyend[6:8]),
-    )
-    charity = {
-        "regno": regno,
-        "fye": fyend,
-        # "name": request.values.get("name"),
-        # "income": request.values.get("income"),
-        # "spending": request.values.get("spending"),
-        # "assets": request.values.get("assets"),
-    }
-    click.echo(f"Uploading document: {pdffile.name}")
-    result = upload_doc(
-        charity,
-        pdffile.read(),
-        get_db()
-    )
-    if result["result"] in ("created"):
-        click.echo(click.style(f"Document uploaded: {pdffile.name}", fg='green'))
-    elif result["result"] in ("updated"):
-        click.echo(click.style(f"Document updated: {pdffile.name}", fg='green'))
+@click.argument('input_path', type=click.Path(exists=True, file_okay=True, dir_okay=True))
+@click.option('--debug/--no-debug', default=False)
+def cli_upload(input_path, debug):
+
+    def file_generator(directory):
+        pathlist = Path(directory).glob('**/*.pdf')
+        for filename in pathlist:
+            yield filename
+
+    if os.path.isdir(input_path):
+        files = file_generator(input_path)
     else:
-        click.echo(click.style(f"ERROR Could not upload document: {pdffile.name}", fg='white', bg='red'), err=True)
-        print(result)
+        files = [input_path]
+
+    for filepath in tqdm(files):
+        with open(filepath, "rb") as pdffile:
+            filename = os.path.basename(filepath)
+            regno, fyend = filename.rstrip(".pdf").split("_")
+            fyend = datetime.date(
+                int(fyend[0:4]),
+                int(fyend[4:6]),
+                int(fyend[6:8]),
+            )
+            charity = {
+                "regno": regno,
+                "fye": fyend,
+                # "name": request.values.get("name"),
+                # "income": request.values.get("income"),
+                # "spending": request.values.get("spending"),
+                # "assets": request.values.get("assets"),
+            }
+            if debug:
+                click.echo(f"Uploading document: {pdffile.name}")
+            result = upload_doc(
+                charity,
+                pdffile.read(),
+                get_db()
+            )
+            if result["result"] in ("created", "updated"):
+                if debug:
+                    click.echo(click.style(f"Document {result['result']}: {pdffile.name}", fg='green'))
+            else:
+                click.echo(click.style(f"ERROR Could not upload document: {pdffile.name}", fg='white', bg='red'), err=True)
+                print(result)
+
+
+@bp.cli.command('check_pdf')
+@click.argument('input_path', type=click.Path(exists=True, file_okay=True, dir_okay=True))
+@click.option('--debug/--no-debug', default=False)
+def cli_check_pdf(input_path, debug):
+
+    def file_generator(directory):
+        pathlist = Path(directory).glob('**/*.pdf')
+        for filename in pathlist:
+            yield filename
+
+    if os.path.isdir(input_path):
+        files = file_generator(input_path)
+    else:
+        files = [input_path]
+
+    for filepath in files:
+        with open(filepath, "rb") as pdffile:
+            try:
+                convert_file(pdffile)
+            except Exception as err:
+                exc_type, value, traceback = sys.exc_info()
+                click.echo(
+                    click.style(f"ERROR Could not upload document: {pdffile.name}", fg='white', bg='red') + f" {exc_type.__name__}: {str(err)}",
+                    err=True
+                )
