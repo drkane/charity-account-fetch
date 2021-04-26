@@ -1,35 +1,35 @@
 import base64
-import re
+import csv
 import datetime
+import io
 import math
 import os
-import io
-import csv
-from pathlib import Path
+import re
 import sys
+from pathlib import Path
 
 import click
-from flask import (
-    Blueprint,
-    render_template,
-    current_app,
-    request,
-    flash,
-    redirect,
-    url_for,
-    make_response,
-    jsonify,
-)
-from werkzeug.utils import secure_filename
 import requests
 import requests_cache
-from tqdm import tqdm
 from elasticsearch.helpers import scan
+from flask import (
+    Blueprint,
+    current_app,
+    flash,
+    jsonify,
+    make_response,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
 from slugify import slugify
+from tqdm import tqdm
+from werkzeug.utils import secure_filename
 
 from docdisplay.db import get_db
+from docdisplay.upload import convert_file, upload_doc
 from docdisplay.utils import add_highlights, get_nav
-from docdisplay.upload import upload_doc, convert_file
 
 requests_cache.install_cache("demo_cache")
 
@@ -148,7 +148,9 @@ def doc_search(filetype="html"):
                 }
                 writer.writerow(row)
             output = make_response(buffer.getvalue())
-            output.headers["Content-Disposition"] = f"attachment; filename=account_search_{slugify(q, separator='_')}.csv"
+            output.headers[
+                "Content-Disposition"
+            ] = f"attachment; filename=account_search_{slugify(q, separator='_')}.csv"
             output.headers["Content-type"] = "text/csv"
             return output
         doc = es.search(
@@ -337,13 +339,14 @@ def doc_upload(filetype="html"):
     return render_template("doc_upload.html.j2")
 
 
-@bp.cli.command('upload')
-@click.argument('input_path', type=click.Path(exists=True, file_okay=True, dir_okay=True))
-@click.option('--debug/--no-debug', default=False)
+@bp.cli.command("upload")
+@click.argument(
+    "input_path", type=click.Path(exists=True, file_okay=True, dir_okay=True)
+)
+@click.option("--debug/--no-debug", default=False)
 def cli_upload(input_path, debug):
-
     def file_generator(directory):
-        pathlist = Path(directory).glob('**/*.pdf')
+        pathlist = Path(directory).glob("**/*.pdf")
         for filename in pathlist:
             yield filename
 
@@ -371,26 +374,34 @@ def cli_upload(input_path, debug):
             }
             if debug:
                 click.echo(f"Uploading document: {pdffile.name}")
-            result = upload_doc(
-                charity,
-                pdffile.read(),
-                get_db()
-            )
+            result = upload_doc(charity, pdffile.read(), get_db())
             if result["result"] in ("created", "updated"):
                 if debug:
-                    click.echo(click.style(f"Document {result['result']}: {pdffile.name}", fg='green'))
+                    click.echo(
+                        click.style(
+                            f"Document {result['result']}: {pdffile.name}", fg="green"
+                        )
+                    )
             else:
-                click.echo(click.style(f"ERROR Could not upload document: {pdffile.name}", fg='white', bg='red'), err=True)
+                click.echo(
+                    click.style(
+                        f"ERROR Could not upload document: {pdffile.name}",
+                        fg="white",
+                        bg="red",
+                    ),
+                    err=True,
+                )
                 print(result)
 
 
-@bp.cli.command('check_pdf')
-@click.argument('input_path', type=click.Path(exists=True, file_okay=True, dir_okay=True))
-@click.option('--debug/--no-debug', default=False)
+@bp.cli.command("check_pdf")
+@click.argument(
+    "input_path", type=click.Path(exists=True, file_okay=True, dir_okay=True)
+)
+@click.option("--debug/--no-debug", default=False)
 def cli_check_pdf(input_path, debug):
-
     def file_generator(directory):
-        pathlist = Path(directory).glob('**/*.pdf')
+        pathlist = Path(directory).glob("**/*.pdf")
         for filename in pathlist:
             yield filename
 
@@ -406,6 +417,11 @@ def cli_check_pdf(input_path, debug):
             except Exception as err:
                 exc_type, value, traceback = sys.exc_info()
                 click.echo(
-                    click.style(f"ERROR Could not upload document: {pdffile.name}", fg='white', bg='red') + f" {exc_type.__name__}: {str(err)}",
-                    err=True
+                    click.style(
+                        f"ERROR Could not upload document: {pdffile.name}",
+                        fg="white",
+                        bg="red",
+                    )
+                    + f" {exc_type.__name__}: {str(err)}",
+                    err=True,
                 )

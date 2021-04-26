@@ -1,5 +1,6 @@
-from requests import Session
 import types
+
+from requests import Session
 
 ENDPOINTS = {
     "SectorDataIncomeCategory": "/sectorincomecategory",

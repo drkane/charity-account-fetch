@@ -1,12 +1,12 @@
-import os
 import datetime
+import os
 
 from flask import Flask
 
-from . import db
 from . import blueprints as bp
-from .utils import add_highlights, parse_datetime
+from . import db
 from .fetch import fetch_cli
+from .utils import add_highlights, parse_datetime
 
 
 def create_app(test_config=None):

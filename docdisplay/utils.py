@@ -1,6 +1,6 @@
+import math
 import re
 from datetime import date, datetime
-import math
 
 from flask import url_for
 

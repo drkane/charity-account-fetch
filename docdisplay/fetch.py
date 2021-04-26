@@ -1,21 +1,21 @@
-import os
-from collections import namedtuple
-from datetime import date, datetime
 import csv
 import logging
+import os
 import re
 import sys
+from collections import namedtuple
+from datetime import date, datetime
 
 import click
+import dateutil.parser
+import requests
 from flask import current_app
 from flask.cli import AppGroup
-import requests
-import dateutil.parser
 from requests_html import HTMLSession
 from tqdm import tqdm
 
-from docdisplay.utils import parse_datetime
 from docdisplay.cc_api import CharityCommissionAPI
+from docdisplay.utils import parse_datetime
 
 fetch_cli = AppGroup("fetch")
 

@@ -1,6 +1,4 @@
-from . import doc
-from . import main
-from . import charity
+from . import charity, doc, main
 
 
 def init_app(app):

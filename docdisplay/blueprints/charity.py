@@ -1,10 +1,10 @@
 import json
 
-from flask import Blueprint, render_template, current_app, request, url_for
+from flask import Blueprint, current_app, render_template, request, url_for
 from graphqlclient import GraphQLClient
 
 from docdisplay.db import get_db
-from docdisplay.fetch import get_charity_type, Account
+from docdisplay.fetch import Account, get_charity_type
 from docdisplay.utils import get_nav
 
 CC_ACCOUNT_FILENAME = r"([0-9]+)_AC_([0-9]{4})([0-9]{2})([0-9]{2})_E_C.PDF"
@@ -145,7 +145,10 @@ def charity_get(regno, filetype="html"):
     charity["finances"] = [
         {
             **f,
-            **accounts.get(f["financialYear"]["end"][0:10], Account(None, regno, f["financialYear"]["end"][0:10]))._asdict(),
+            **accounts.get(
+                f["financialYear"]["end"][0:10],
+                Account(None, regno, f["financialYear"]["end"][0:10]),
+            )._asdict(),
             **documents.get(f["financialYear"]["end"][0:10], {}),
             "fyend": f["financialYear"]["end"][0:10],
         }

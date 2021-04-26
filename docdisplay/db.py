@@ -1,6 +1,5 @@
-import elasticsearch
-
 import click
+import elasticsearch
 from flask import current_app, g
 from flask.cli import with_appcontext
 

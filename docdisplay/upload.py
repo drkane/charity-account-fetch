@@ -1,10 +1,10 @@
-import io
 import base64
 import datetime
+import io
 import sys
 
-from flask import current_app
 import pdfplumber
+from flask import current_app
 
 
 class DocumentUploadError(Exception):
