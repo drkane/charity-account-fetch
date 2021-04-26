@@ -1,11 +1,11 @@
-{% from '_search.html' import search %}
-{% extends "base.html" %}
+{% from '_search.html.j2' import search %}
+{% extends "base.html.j2" %}
 
 {% block content %}
 <p>
     <strong>{{ "{:,.0f}".format(resultCount) }}</strong> documents in index
 </p>
-<form>
+<form action="{{url_for('doc.doc_search')}}">
     {{ search('', 'Search in documents') }}
 </form>
 <p>

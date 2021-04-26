@@ -119,7 +119,7 @@ def charity_search():
         nav["first"] = url_for("charity.charity_search", q=q, p=nav["first_page"])
 
     return render_template(
-        "charity_search.html",
+        "charity_search.html.j2",
         results=results,
         q=request.values.get("q", ""),
         nav=nav,
@@ -164,5 +164,5 @@ def charity_get(regno, filetype="html"):
             "errors": [],
         }
     return render_template(
-        "charity.html", results=accounts, charity=charity, regno=regno
+        "charity.html.j2", results=accounts, charity=charity, regno=regno
     )

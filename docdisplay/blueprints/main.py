@@ -15,4 +15,4 @@ def index():
         doc_type="_doc",
         body={"query": {"match_all": {}}},
     )
-    return render_template("index.html", docs=count.get("count", 0))
+    return render_template("index.html.j2", docs=count.get("count", 0))

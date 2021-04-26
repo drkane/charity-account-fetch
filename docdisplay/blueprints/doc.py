@@ -67,7 +67,7 @@ def doc_get(id):
         doc.get("_source", {}).get("attachment", {}).get("content", ""), q=highlight
     )
     return render_template(
-        "doc_display.html",
+        "doc_display.html.j2",
         result=doc.get("_source"),
         id=id,
         highlight=highlight,
@@ -89,7 +89,7 @@ def doc_get_embed(id):
         doc.get("_source", {}).get("attachment", {}).get("content", ""), q=highlight
     )
     return render_template(
-        "doc_display_embed.html",
+        "doc_display_embed.html.j2",
         content=content,
         id=id,
         highlight=highlight,
@@ -127,7 +127,7 @@ def doc_search():
             resultCount = resultCount.get("value")
         results = doc.get("hits", {}).get("hits", [])
     return render_template(
-        "doc_search.html",
+        "doc_search.html.j2",
         results=results,
         q=q,
         resultCount=resultCount,
@@ -136,7 +136,7 @@ def doc_search():
 
 @bp.route("/bulkupload")
 def doc_upload_bulk():
-    return render_template("doc_upload_bulk.html")
+    return render_template("doc_upload_bulk.html.j2")
 
 
 @bp.route("/all_docs")
@@ -276,7 +276,7 @@ def doc_upload(filetype="html"):
             )
         return redirect(url_for("doc.doc_get", id=result.get("_id")))
 
-    return render_template("doc_upload.html")
+    return render_template("doc_upload.html.j2")
 
 
 @bp.cli.command('upload')
