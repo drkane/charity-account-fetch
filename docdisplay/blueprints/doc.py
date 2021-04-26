@@ -3,6 +3,8 @@ import re
 import datetime
 import math
 import os
+import io
+import csv
 from pathlib import Path
 import sys
 
@@ -22,6 +24,8 @@ from werkzeug.utils import secure_filename
 import requests
 import requests_cache
 from tqdm import tqdm
+from elasticsearch.helpers import scan
+from slugify import slugify
 
 from docdisplay.db import get_db
 from docdisplay.utils import add_highlights, get_nav
@@ -97,7 +101,8 @@ def doc_get_embed(id):
 
 
 @bp.route("/search")
-def doc_search():
+@bp.route("/search.<filetype>")
+def doc_search(filetype="html"):
     es = get_db()
     q = request.values.get("q")
 
@@ -112,10 +117,42 @@ def doc_search():
     resultCount = 0
     nav = {}
     if q:
-        doc = es.search(
+        params = dict(
             index=current_app.config.get("ES_INDEX"),
             doc_type="_doc",
             q=request.values.get("q"),
+        )
+        if filetype == "csv":
+            doc = scan(
+                es,
+                **params,
+                _source_excludes=["filedata", "attachment"],
+            )
+            buffer = io.StringIO()
+            fields = [
+                "regno",
+                "fye",
+                "filename",
+                "name",
+                "income",
+                "spending",
+                "assets",
+                "search term",
+            ]
+            writer = csv.DictWriter(buffer, fieldnames=fields)
+            writer.writeheader()
+            for k, result in enumerate(doc):
+                row = {
+                    "search term": q,
+                    **result["_source"],
+                }
+                writer.writerow(row)
+            output = make_response(buffer.getvalue())
+            output.headers["Content-Disposition"] = f"attachment; filename=account_search_{slugify(q, separator='_')}.csv"
+            output.headers["Content-type"] = "text/csv"
+            return output
+        doc = es.search(
+            **params,
             _source_excludes=["filedata"],
             body=dict(
                 highlight={
@@ -151,6 +188,7 @@ def doc_search():
         q=q,
         resultCount=resultCount,
         nav=nav,
+        downloadUrl=url_for("doc.doc_search", q=q, filetype="csv"),
     )
 
 

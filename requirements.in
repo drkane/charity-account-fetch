@@ -9,3 +9,4 @@ pdfplumber
 graphqlclient
 gunicorn
 requests-cache
+python-slugify
