@@ -24,7 +24,7 @@ import requests_cache
 from tqdm import tqdm
 
 from docdisplay.db import get_db
-from docdisplay.utils import add_highlights
+from docdisplay.utils import add_highlights, get_nav
 from docdisplay.upload import upload_doc, convert_file
 
 requests_cache.install_cache("demo_cache")
@@ -100,8 +100,17 @@ def doc_get_embed(id):
 def doc_search():
     es = get_db()
     q = request.values.get("q")
+
+    try:
+        p = int(request.values.get("p", 1))
+    except ValueError:
+        p = 1
+    limit = 10
+    skip = limit * (p - 1)
+
     results = None
     resultCount = 0
+    nav = {}
     if q:
         doc = es.search(
             index=current_app.config.get("ES_INDEX"),
@@ -121,16 +130,27 @@ def doc_search():
                     "encoder": "html",
                 }
             ),
+            from_=skip,
+            size=limit,
         )
         resultCount = doc.get("hits", {}).get("total", 0)
         if isinstance(resultCount, dict):
             resultCount = resultCount.get("value")
+
+        nav = get_nav(
+            p,
+            limit,
+            resultCount,
+            "doc.doc_search",
+            dict(q=q),
+        )
         results = doc.get("hits", {}).get("hits", [])
     return render_template(
         "doc_search.html.j2",
         results=results,
         q=q,
         resultCount=resultCount,
+        nav=nav,
     )
 
 

@@ -1,11 +1,11 @@
 import json
-import math
 
 from flask import Blueprint, render_template, current_app, request, url_for
 from graphqlclient import GraphQLClient
 
 from docdisplay.db import get_db
 from docdisplay.fetch import get_charity_type, Account
+from docdisplay.utils import get_nav
 
 CC_ACCOUNT_FILENAME = r"([0-9]+)_AC_([0-9]{4})([0-9]{2})([0-9]{2})_E_C.PDF"
 
@@ -103,20 +103,13 @@ def charity_search():
     skip = limit * (p - 1)
 
     results = search_charities(q, limit, skip)
-    nav = {
-        "first_result": ((p - 1) * limit) + 1,
-        "last_result": min([p * limit, results["count"]]),
-        "current_page": p,
-        "first_page": 1,
-        "last_page": math.ceil(results["count"] / limit),
-    }
-
-    if results["count"] > nav["last_result"]:
-        nav["last"] = url_for("charity.charity_search", q=q, p=nav["last_page"])
-        nav["next"] = url_for("charity.charity_search", q=q, p=p + 1)
-    if p > 2:
-        nav["prev"] = url_for("charity.charity_search", q=q, p=p - 1)
-        nav["first"] = url_for("charity.charity_search", q=q, p=nav["first_page"])
+    nav = get_nav(
+        p,
+        limit,
+        results["count"],
+        "charity.charity_search",
+        dict(q=q),
+    )
 
     return render_template(
         "charity_search.html.j2",

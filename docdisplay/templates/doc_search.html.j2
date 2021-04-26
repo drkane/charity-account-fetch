@@ -6,7 +6,11 @@
         {{ search(q, 'Term to find in document') }}
     </form>
     {% if results %}
+    {% if resultCount > results|length %}
+    <p>{{ nav.first_result }} - {{nav.last_result}} of {{resultCount}} results:</p>
+    {% else %}
     <p>{{resultCount}} results:</p>
+    {% endif %}
     <ul class="list ma0 pa0">
         {% for r in results %}
         <li class="">
@@ -23,6 +27,7 @@
         </li>
         {% endfor %}
     </ul>
+    {% include '_pagination.html.j2' %}
     {% else %}
     <p class="mb5">No results found</p>
     {% endif %}
