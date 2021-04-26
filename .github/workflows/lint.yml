@@ -1,7 +1,7 @@
 name: Python linting
 on: [push, pull_request]
 jobs:
-  django-lint:
+  lint:
 
     runs-on: ubuntu-latest
 
