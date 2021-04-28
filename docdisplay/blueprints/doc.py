@@ -344,7 +344,8 @@ def doc_upload(filetype="html"):
     "input_path", type=click.Path(exists=True, file_okay=True, dir_okay=True)
 )
 @click.option("--debug/--no-debug", default=False)
-def cli_upload(input_path, debug):
+@click.option("--skip-if-exists/--no-skip-if-exists", default=False)
+def cli_upload(input_path, debug, skip_if_exists=False):
     def file_generator(directory):
         pathlist = Path(directory).glob("**/*.pdf")
         for filename in pathlist:
@@ -374,8 +375,8 @@ def cli_upload(input_path, debug):
             }
             if debug:
                 click.echo(f"Uploading document: {pdffile.name}")
-            result = upload_doc(charity, pdffile.read(), get_db())
-            if result["result"] in ("created", "updated"):
+            result = upload_doc(charity, pdffile.read(), get_db(), skip_if_exists=skip_if_exists)
+            if result["result"] in ("created", "updated", "already exists"):
                 if debug:
                     click.echo(
                         click.style(

@@ -3,6 +3,7 @@ import datetime
 import io
 import sys
 
+from elasticsearch.exceptions import NotFoundError
 import pdfplumber
 from flask import current_app
 
@@ -32,9 +33,27 @@ def convert_file(source):
         }
 
 
-def upload_doc(charity, content, es):
+def upload_doc(charity, content, es, skip_if_exists=False):
     id_ = "{}-{:%Y%m%d}".format(charity["regno"], charity["fye"])
     filename = id_ + ".pdf"
+
+    if skip_if_exists:
+        try:
+            doc = es.get(
+                index=current_app.config.get("ES_INDEX"),
+                doc_type="_doc",
+                id=id_,
+                _source=False,
+            )
+            return {
+                "_index": doc["_index"],
+                "_type": doc["_type"],
+                "_id": doc["_id"],
+                "result": "already exists",
+            }
+        except NotFoundError:
+            pass
+
     try:
         attachment = convert_file(io.BytesIO(content))
     except Exception as err:
