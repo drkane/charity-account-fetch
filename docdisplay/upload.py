@@ -3,8 +3,8 @@ import datetime
 import io
 import sys
 
-from elasticsearch.exceptions import NotFoundError
 import pdfplumber
+from elasticsearch.exceptions import NotFoundError
 from flask import current_app
 
 

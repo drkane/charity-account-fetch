@@ -375,7 +375,9 @@ def cli_upload(input_path, debug, skip_if_exists=False):
             }
             if debug:
                 click.echo(f"Uploading document: {pdffile.name}")
-            result = upload_doc(charity, pdffile.read(), get_db(), skip_if_exists=skip_if_exists)
+            result = upload_doc(
+                charity, pdffile.read(), get_db(), skip_if_exists=skip_if_exists
+            )
             if result["result"] in ("created", "updated", "already exists"):
                 if debug:
                     click.echo(
