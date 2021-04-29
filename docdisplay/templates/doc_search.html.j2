@@ -24,9 +24,11 @@
                 {{r._id}}
             {% endif %}
             </a>
+            {% if r.highlight %}
             {% for s in r.highlight["attachment.content"] %}
             <pre class="pa2 bg-washed-yellow b--gray bw1 bn f6 sans-serif base-font mh0 mt0 mb2">{{s|safe}}</pre>
             {% endfor %}
+            {% endif %}
         </li>
         {% endfor %}
     </ul>
