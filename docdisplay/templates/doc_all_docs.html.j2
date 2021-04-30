@@ -9,7 +9,12 @@
     {{ search('', 'Search in documents') }}
 </form>
 <p>
-    Showing results {{ (page * page_size) + 1 }} to {{ ((page * page_size) + page_size, resultCount)|min }}
+    {% if resultCount > results|length %}
+    {{ nav.first_result }} - {{nav.last_result}} of {{resultCount}} results:
+    {% else %}
+    {{resultCount}} results:
+    {% endif %}
+    <a href="{{downloadUrl}}">Download CSV</a>
 </p>
 <table class="table collapse w-100 f5">
     <thead>
@@ -41,13 +46,5 @@
     {% endfor %}
     </tbody>
 </table>
-<p>
-    Page {{ page + 1 }} of {{ maxPage }}
-    {% if page > 0 %}
-    <a href="{{url_for('doc.doc_all_docs', p=page-1)}}">&lt; Previous page</a>
-    {% endif %}
-    {% if not (page * page_size) + page_size >= resultCount %}
-    <a href="{{url_for('doc.doc_all_docs', p=page+1)}}">Next page &gt;</a>
-    {% endif %}
-</p>
+{% include '_pagination.html.j2' %}
 {% endblock content %}

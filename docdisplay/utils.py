@@ -61,7 +61,7 @@ def get_nav(p, limit, result_count, url_base, url_args):
     if result_count > nav["last_result"]:
         nav["last"] = url_for(url_base, **url_args, p=nav["last_page"])
         nav["next"] = url_for(url_base, **url_args, p=p + 1)
-    if p > 2:
+    if p >= 2:
         nav["prev"] = url_for(url_base, **url_args, p=p - 1)
         nav["first"] = url_for(url_base, **url_args, p=nav["first_page"])
 

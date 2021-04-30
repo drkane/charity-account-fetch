@@ -2,7 +2,6 @@ import base64
 import csv
 import datetime
 import io
-import math
 import os
 import re
 import sys
@@ -200,28 +199,71 @@ def doc_upload_bulk():
 
 
 @bp.route("/all_docs")
-def doc_all_docs():
+@bp.route("/all_docs.<filetype>")
+def doc_all_docs(filetype="html"):
     es = get_db()
-    page = int(request.values.get("p", 0))
-    page_size = 10
+
+    try:
+        p = int(request.values.get("p", 1))
+    except ValueError:
+        p = 1
+    limit = 10
+    skip = limit * (p - 1)
+
+    results = None
+    resultCount = 0
+    nav = {}
+
+    if filetype == "csv":
+        doc = scan(
+            es,
+            index=current_app.config.get("ES_INDEX"),
+            doc_type="_doc",
+            _source_excludes=["filedata", "attachment"],
+        )
+        buffer = io.StringIO()
+        fields = [
+            "regno",
+            "fye",
+            "filename",
+            "name",
+            "income",
+            "spending",
+            "assets",
+        ]
+        writer = csv.DictWriter(buffer, fieldnames=fields)
+        writer.writeheader()
+        for k, result in enumerate(doc):
+            writer.writerow(result["_source"])
+        output = make_response(buffer.getvalue())
+        output.headers["Content-Disposition"] = "attachment; filename=all_accounts.csv"
+        output.headers["Content-type"] = "text/csv"
+        return output
+
     res = es.search(
         index=current_app.config.get("ES_INDEX"),
         doc_type="_doc",
         _source_excludes=["filedata", "attachment"],
-        body={"size": page_size, "from": page_size * page, "query": {"match_all": {}}},
+        body={"size": limit, "from": skip, "query": {"match_all": {}}},
     )
     resultCount = res.get("hits", {}).get("total", 0)
     if isinstance(resultCount, dict):
         resultCount = resultCount.get("value")
-    maxPage = math.ceil(resultCount / page_size)
+
+    nav = get_nav(
+        p,
+        limit,
+        resultCount,
+        "doc.doc_all_docs",
+        dict(),
+    )
     results = res.get("hits", {}).get("hits", [])
     return render_template(
         "doc_all_docs.html.j2",
         results=results,
         resultCount=resultCount,
-        page=page,
-        maxPage=maxPage,
-        page_size=page_size,
+        nav=nav,
+        downloadUrl=url_for("doc.doc_all_docs", filetype="csv"),
     )
 
 
