@@ -13,6 +13,7 @@ import requests_cache
 from elasticsearch.helpers import scan
 from flask import (
     Blueprint,
+    Response,
     current_app,
     flash,
     jsonify,
@@ -21,7 +22,6 @@ from flask import (
     render_template,
     request,
     url_for,
-    Response,
 )
 from slugify import slugify
 from tqdm import tqdm
@@ -247,11 +247,11 @@ def doc_all_docs(filetype="html"):
 
         return Response(
             generate_csv(),
-            mimetype='text/csv',
+            mimetype="text/csv",
             headers={
                 "Content-Disposition": "attachment; filename=all_accounts.csv",
                 "Content-type": "text/csv",
-            }
+            },
         )
 
     res = es.search(
