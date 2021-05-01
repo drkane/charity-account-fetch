@@ -21,6 +21,7 @@ from flask import (
     render_template,
     request,
     url_for,
+    Response,
 )
 from slugify import slugify
 from tqdm import tqdm
@@ -222,7 +223,6 @@ def doc_all_docs(filetype="html"):
             _source_excludes=["filedata", "attachment"],
             request_timeout=1000,
         )
-        buffer = io.StringIO()
         fields = [
             "regno",
             "fye",
@@ -232,14 +232,27 @@ def doc_all_docs(filetype="html"):
             "spending",
             "assets",
         ]
-        writer = csv.DictWriter(buffer, fieldnames=fields)
-        writer.writeheader()
-        for k, result in enumerate(doc):
-            writer.writerow(result["_source"])
-        output = make_response(buffer.getvalue())
-        output.headers["Content-Disposition"] = "attachment; filename=all_accounts.csv"
-        output.headers["Content-type"] = "text/csv"
-        return output
+
+        def generate_csv():
+            buffer = io.StringIO()
+            writer = csv.DictWriter(buffer, fieldnames=fields)
+            writer.writeheader()
+            yield buffer.getvalue()
+
+            for result in doc:
+                buffer = io.StringIO()
+                writer = csv.DictWriter(buffer, fieldnames=fields)
+                writer.writerow(result["_source"])
+                yield buffer.getvalue()
+
+        return Response(
+            generate_csv(),
+            mimetype='text/csv',
+            headers={
+                "Content-Disposition": "attachment; filename=all_accounts.csv",
+                "Content-type": "text/csv",
+            }
+        )
 
     res = es.search(
         index=current_app.config.get("ES_INDEX"),
