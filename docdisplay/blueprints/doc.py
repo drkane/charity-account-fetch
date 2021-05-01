@@ -220,6 +220,7 @@ def doc_all_docs(filetype="html"):
             index=current_app.config.get("ES_INDEX"),
             doc_type="_doc",
             _source_excludes=["filedata", "attachment"],
+            request_timeout=1000,
         )
         buffer = io.StringIO()
         fields = [
