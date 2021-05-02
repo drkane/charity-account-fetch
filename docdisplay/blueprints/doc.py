@@ -413,6 +413,18 @@ def cli_upload(input_path, debug, skip_if_exists=False):
         files = [input_path]
 
     for filepath in tqdm(files):
+        filesize = os.path.getsize(filepath)
+        if filesize > current_app.config["FILE_SIZE_LIMT"]:
+            click.echo(
+                click.style(
+                    f"ERROR Filesize too big: {filepath} [{filesize}]",
+                    fg="white",
+                    bg="red",
+                ),
+                err=True,
+            )
+            continue
+
         with open(filepath, "rb") as pdffile:
             filename = os.path.basename(filepath)
             regno, fyend = filename.rstrip(".pdf").split("_")

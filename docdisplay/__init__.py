@@ -21,6 +21,7 @@ def create_app(test_config=None):
         ),
         CHARITYBASE_API_KEY=os.environ.get("CHARITYBASE_API_KEY"),
         CCEW_API_KEY=os.environ.get("CCEW_API_KEY"),
+        FILE_SIZE_LIMT=(1024 ** 2) * 10,  # limit file size to upload - 10MB
     )
 
     if test_config is None:
