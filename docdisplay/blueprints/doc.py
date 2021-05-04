@@ -123,8 +123,10 @@ def doc_search(filetype="html"):
             _source_excludes=["filedata", "attachment.content"],
             body={
                 "query": {
-                    "match": {
-                        "attachment.content": request.values.get("q"),
+                    "simple_query_string": {
+                        "query": request.values.get("q"),
+                        "fields": ["attachment.content"],
+                        "default_operator": "or",
                     }
                 }
             },

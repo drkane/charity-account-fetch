@@ -2,7 +2,7 @@
 <div class="cf mt3 flex">
     <input class="f4 f3-l input-reset bl bt bb br-0 b--black-20 fl near-black bg-white pa3 lh-solid w-100 w-75-m w-80-l br2-ns br--left-ns"
            type="text"
-           value="{{ q or '' }}"
+           value="{{ q|e or '' }}"
            name="q"
            id="q"
            placeholder="{{ placeholder or '' }}">
