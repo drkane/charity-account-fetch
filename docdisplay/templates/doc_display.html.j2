@@ -18,7 +18,7 @@
     <p>Charity: <a href='{{ url_for("charity.charity_get", regno=result.regno) }}' class="link blue b">{{result.regno}}</a></p>
     <p>Financial year end: <span class="b">{{result.fye[0:10]|dateformat(o='%d %B %Y')}}</span></p>
     <form class="">
-        <input type="search" name="q" value="{{ highlight|e or ''}}" 
+        <input type="search" name="q" value="{{ (highlight or '')|e}}" 
             class="f4 f3-l input-reset ba b--black-20 fl near-black bg-white pa3 lh-solid w-100 br2-ns" 
             placeholder='search term' />
         <input class="f4 button-reset ba b--black-20 fl pv2 tc bg-animate bg-yellow dim near-black pointer w-100 br2-ns mt2"

@@ -1,12 +1,13 @@
 import datetime
 import os
+import re
 
 from flask import Flask
 
 from . import blueprints as bp
 from . import db
 from .fetch import fetch_cli
-from .utils import add_highlights, parse_datetime
+from .utils import parse_datetime
 
 
 def create_app(test_config=None):
@@ -47,9 +48,9 @@ def create_app(test_config=None):
             now=datetime.datetime.now(),
         )
 
-    @app.template_filter("highlight")
-    def highlight_filter(s, q):
-        return add_highlights(s, q)[0]
+    @app.template_filter("strip_whitespace")
+    def strip_whitespace(text):
+        return re.sub(r"(\s)\s+", r"\1", text)
 
     @app.template_filter("dateformat")
     def dateformat_filter(d, f="%Y-%m-%d", o=None):

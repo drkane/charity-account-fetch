@@ -26,7 +26,7 @@
             </a>
             {% if r.highlight %}
             {% for s in r.highlight["attachment.content"] %}
-            <pre class="pa2 bg-washed-yellow b--gray bw1 bn f6 sans-serif base-font mh0 mt0 mb2">{{s|safe}}</pre>
+            <pre class="pa2 bg-washed-yellow b--gray bw1 bn f6 sans-serif base-font mh0 mt0 mb2">{{s|safe|strip_whitespace}}</pre>
             {% endfor %}
             {% endif %}
         </li>

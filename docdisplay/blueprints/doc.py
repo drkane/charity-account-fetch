@@ -10,10 +10,13 @@ from pathlib import Path
 import click
 import requests
 import requests_cache
+from elasticsearch import NotFoundError
 from elasticsearch.helpers import scan
 from flask import (
     Blueprint,
+    Markup,
     Response,
+    abort,
     current_app,
     flash,
     jsonify,
@@ -29,7 +32,7 @@ from werkzeug.utils import secure_filename
 
 from docdisplay.db import get_db
 from docdisplay.upload import convert_file, upload_doc
-from docdisplay.utils import add_highlights, get_nav
+from docdisplay.utils import get_nav
 
 requests_cache.install_cache("demo_cache")
 
@@ -38,15 +41,64 @@ CC_ACCOUNT_FILENAME = r"([0-9]+)_AC_([0-9]{4})([0-9]{2})([0-9]{2})_E_C.PDF"
 bp = Blueprint("doc", __name__, url_prefix="/doc")
 
 
+def get_doc(id, q=None):
+    highlight_class = 'data-charity-account-highlight="true"'
+    es = get_db()
+    body = {
+        "query": {
+            "terms": {
+                "_id": [id],
+            }
+        }
+    }
+    if q:
+        body["highlight"] = {
+            "fields": {
+                "attachment.content": {
+                    "number_of_fragments": 0,
+                    "pre_tags": [
+                        f'<em class="bg-yellow b highlight" {highlight_class}>'
+                    ],
+                    "post_tags": ["</em>"],
+                    "highlight_query": {
+                        "simple_query_string": {
+                            "query": q,
+                            "fields": ["attachment.content"],
+                            "default_operator": "or",
+                        }
+                    },
+                }
+            },
+            "encoder": "html",
+        }
+    search_doc = es.search(
+        index=current_app.config.get("ES_INDEX"),
+        doc_type="_doc",
+        body=body,
+        _source_excludes=["filedata"],
+    )
+    if search_doc.get("hits", {}).get("hits", []):
+        doc = search_doc.get("hits", {}).get("hits", [])[0]
+        if doc.get("highlight", {}).get("attachment.content"):
+            content = doc["highlight"]["attachment.content"][0]
+            content = Markup(content).unescape()
+            doc["_highlight_count"] = content.count(highlight_class)
+            doc["_source"]["attachment"]["content"] = content
+        return doc
+
+
 @bp.route("/<id>.pdf")
 def doc_get_pdf(id):
     es = get_db()
-    doc = es.get(
-        index=current_app.config.get("ES_INDEX"),
-        doc_type="_doc",
-        id=id,
-        _source_includes=["filedata"],
-    )
+    try:
+        doc = es.get(
+            index=current_app.config.get("ES_INDEX"),
+            doc_type="_doc",
+            id=id,
+            _source_includes=["filedata"],
+        )
+    except NotFoundError:
+        abort(404, description=f"Could not find document (id: [{id}])")
     return make_response(
         base64.b64decode(doc.get("_source", {}).get("filedata")),
         200,
@@ -59,39 +111,26 @@ def doc_get_pdf(id):
 
 @bp.route("/<id>")
 def doc_get(id):
-    es = get_db()
-    doc = es.get(
-        index=current_app.config.get("ES_INDEX"),
-        doc_type="_doc",
-        id=id,
-        _source_excludes=["filedata"],
-    )
     highlight = request.values.get("q")
-    _, highlight_count = add_highlights(
-        doc.get("_source", {}).get("attachment", {}).get("content", ""), q=highlight
-    )
+    doc = get_doc(id, highlight)
+    if not doc:
+        abort(404, description=f"Could not find document (id: [{id}])")
     return render_template(
         "doc_display.html.j2",
         result=doc.get("_source"),
         id=id,
         highlight=highlight,
-        highlight_count=highlight_count,
+        highlight_count=doc.get("_highlight_count", 0),
     )
 
 
 @bp.route("/<id>/embed")
 def doc_get_embed(id):
-    es = get_db()
-    doc = es.get(
-        index=current_app.config.get("ES_INDEX"),
-        doc_type="_doc",
-        id=id,
-        _source_excludes=["filedata"],
-    )
     highlight = request.values.get("q")
-    content, highlight_count = add_highlights(
-        doc.get("_source", {}).get("attachment", {}).get("content", ""), q=highlight
-    )
+    doc = get_doc(id, highlight)
+    if not doc:
+        abort(404, description=f"Could not find document (id: [{id}])")
+    content = doc.get("_source", {}).get("attachment", {}).get("content", "")
     return render_template(
         "doc_display_embed.html.j2",
         content=content,
@@ -166,7 +205,7 @@ def doc_search(filetype="html"):
                 "attachment.content": {
                     "fragment_size": 150,
                     "number_of_fragments": 3,
-                    "pre_tags": ['<em class="bg-yellow b">'],
+                    "pre_tags": ['<em class="bg-yellow b highlight">'],
                     "post_tags": ["</em>"],
                 }
             },
@@ -189,6 +228,10 @@ def doc_search(filetype="html"):
             dict(q=q),
         )
         results = doc.get("hits", {}).get("hits", [])
+        for r in results:
+            r["highlight"]["attachment.content"] = [
+                Markup(s).unescape() for s in r["highlight"]["attachment.content"]
+            ]
     return render_template(
         "doc_search.html.j2",
         results=results,

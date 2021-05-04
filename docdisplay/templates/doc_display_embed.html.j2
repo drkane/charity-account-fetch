@@ -19,5 +19,12 @@
     <div class="ws-pre f5">
         {{content|safe}}
     </div>
+    <script>
+      Array.from(
+        document.getElementsByClassName("highlight")
+      ).forEach(
+        (el, index) => el.id = `match-${index+1}`
+      );
+    </script>
   </body>
 </html>
