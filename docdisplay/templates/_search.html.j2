@@ -1,4 +1,4 @@
-{% macro search(q, placeholder, submit='Search') %}
+{% macro search(q, placeholder, submit='Search', show_guidance=false) %}
 <div class="cf mt3 flex">
     <input class="f4 f3-l input-reset bl bt bb br-0 b--black-20 fl near-black bg-white pa3 lh-solid w-100 w-75-m w-80-l br2-ns br--left-ns"
            type="text"
@@ -12,6 +12,22 @@
            name=""
            id="search_button"
            placeholder="">
-    {% if caller %}{{ caller() }}{% endif %}
 </div>
+{% if show_guidance %}
+<details class="mt3 f6">
+       <summary class="pointer f5">Search guidance</summary>
+       <ul class="">
+              <li class="mt2 mr2"><code class="bg-light-gray pa1"><a href="{{url_for('doc.doc_search', q='+prime +minister')}}">+prime +minister</a></code> searches for documents with "prime" AND "minister"</li>
+              <li class="mt2 mr2"><code class="bg-light-gray pa1"><a href="{{url_for('doc.doc_search', q='prime | minister')}}">prime | minister</a></code> searches for documents with "prime" OR "minister"</li>
+              <li class="mt2 mr2"><code class="bg-light-gray pa1"><a href="{{url_for('doc.doc_search', q='+prime -minister')}}">prime -minister</a></code> searches for documents with "prime" but not with "minister"</li>
+              <li class="mt2 mr2"><code class="bg-light-gray pa1"><a href="{{url_for('doc.doc_search', q='"prime minister"')}}">"prime minister"</a></code> searches for the exact phrase "prime minister"</li>
+              <li class="mt2 mr2"><code class="bg-light-gray pa1"><a href="{{url_for('doc.doc_search', q='pri*')}}">pri*</a></code> searches for any words starting with "pri"</li>
+              <li class="mt2 mr2"><code class="bg-light-gray pa1"><a href="{{url_for('doc.doc_search', q='(prime) minister')}}">(prime) minister</a></code> will search for "prime" and "minister" but give a preference to "prime"</li>
+              <li class="mt2 mr2"><code class="bg-light-gray pa1"><a href="{{url_for('doc.doc_search', q='prime~3')}}">prime~3</a></code> will find documents with words that are up to 3 edits away from "prime" (eg will match "proms", "prior", "time")</li>
+              <li class="mt2 mr2"><code class="bg-light-gray pa1"><a href="{{url_for('doc.doc_search', q='"spell clearly"~3')}}">"spell clearly"~3</a></code> will find documents where "spell" and "clearly" are found within three words of each other (so will match "spell out clearly")</li>
+       </ul>
+       <p><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-simple-query-string-query.html#simple-query-string-syntax" target="_blank">Elasticsearch documentation</a></p>
+</details>
+{% endif %}
+    {% if caller %}{{ caller() }}{% endif %}
 {% endmacro %}

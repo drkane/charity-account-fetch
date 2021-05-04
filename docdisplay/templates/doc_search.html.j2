@@ -3,7 +3,7 @@
 {% block content %}
     <h2>Search within documents</h2>
     <form>
-        {{ search(q, 'Term to find in document') }}
+        {{ search(q, 'Term to find in document', show_guidance=true) }}
     </form>
     {% if results %}
     <p>
