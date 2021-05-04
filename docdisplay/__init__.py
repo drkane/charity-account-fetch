@@ -2,7 +2,7 @@ import datetime
 import os
 import re
 
-from flask import Flask
+from flask import Flask, render_template
 
 from . import blueprints as bp
 from . import db
@@ -55,5 +55,9 @@ def create_app(test_config=None):
     @app.template_filter("dateformat")
     def dateformat_filter(d, f="%Y-%m-%d", o=None):
         return parse_datetime(d, f, o)
+
+    @app.errorhandler(404)
+    def page_not_found(e):
+        return render_template("404.html.j2", error=e), 404
 
     return app
