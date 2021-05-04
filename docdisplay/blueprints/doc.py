@@ -120,13 +120,19 @@ def doc_search(filetype="html"):
         params = dict(
             index=current_app.config.get("ES_INDEX"),
             doc_type="_doc",
-            q=request.values.get("q"),
+            _source_excludes=["filedata", "attachment.content"],
+            body={
+                "query": {
+                    "match": {
+                        "attachment.content": request.values.get("q"),
+                    }
+                }
+            },
         )
         if filetype == "csv":
             doc = scan(
                 es,
                 **params,
-                _source_excludes=["filedata", "attachment"],
             )
             buffer = io.StringIO()
             fields = [
@@ -153,22 +159,19 @@ def doc_search(filetype="html"):
             ] = f"attachment; filename=account_search_{slugify(q, separator='_')}.csv"
             output.headers["Content-type"] = "text/csv"
             return output
+        params["body"]["highlight"] = {
+            "fields": {
+                "attachment.content": {
+                    "fragment_size": 150,
+                    "number_of_fragments": 3,
+                    "pre_tags": ['<em class="bg-yellow b">'],
+                    "post_tags": ["</em>"],
+                }
+            },
+            "encoder": "html",
+        }
         doc = es.search(
             **params,
-            _source_excludes=["filedata"],
-            body=dict(
-                highlight={
-                    "fields": {
-                        "attachment.content": {
-                            "fragment_size": 150,
-                            "number_of_fragments": 3,
-                            "pre_tags": ['<em class="bg-yellow b">'],
-                            "post_tags": ["</em>"],
-                        }
-                    },
-                    "encoder": "html",
-                }
-            ),
             from_=skip,
             size=limit,
         )
