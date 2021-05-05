@@ -133,3 +133,14 @@ flask doc upload NI100002_20200331.pdf
 ```
 
 The command line expects the filename to be in the correct format `<regno>_<fyend>.pdf`. Where `<fyend>` is in format `YYYYMMDD`.
+
+## `max_result_window` setting
+
+Where there are more than 10,000 documents it can cause issues with 
+elasticsearch due to the `max_result_window` setting.
+
+To increase the maximum number of results run the following command:
+
+```sh
+flask update-index-setting max_result_window 10001
+```

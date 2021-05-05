@@ -24,6 +24,7 @@ def init_db():
 def init_app(app):
     app.teardown_appcontext(close_db)
     app.cli.add_command(init_db_command)
+    app.cli.add_command(update_db_setting_command)
 
 
 @click.command("init-db")
@@ -32,3 +33,17 @@ def init_db_command():
     """Clear the existing data and create new tables."""
     init_db()
     click.echo("Initialized the database.")
+
+
+@click.command("update-index-setting")
+@click.argument("name")
+@click.argument("value")
+@with_appcontext
+def update_db_setting_command(name, value):
+    """Update setting NAME on the index to VALUE."""
+    es = get_db()
+    es.indices.put_settings(
+        index=current_app.config["ES_INDEX"],
+        body={"index": {name: value}},
+    )
+    click.echo(f"Set '{name}' to '{value}'")
