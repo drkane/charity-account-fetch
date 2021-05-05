@@ -45,8 +45,12 @@ fake-useragent==0.1.11
     #   requests-html
 flake8==3.9.0
     # via -r dev-requirements.in
-flask==1.1.2
+flask-basicauth==0.2.0
     # via -r requirements.txt
+flask==1.1.2
+    # via
+    #   -r requirements.txt
+    #   flask-basicauth
 graphqlclient==0.2.4
     # via -r requirements.txt
 gunicorn==20.0.4

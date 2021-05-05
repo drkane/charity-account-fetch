@@ -10,3 +10,4 @@ graphqlclient
 gunicorn
 requests-cache
 python-slugify
+Flask-BasicAuth

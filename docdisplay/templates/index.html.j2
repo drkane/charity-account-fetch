@@ -27,26 +27,31 @@
                 {{ search(q, 'Search charities', 'Search charities') }}
             </form>
         </li>
-        <li class="mb5 db">
-            <h3 class="ma0 pa0">
-                <a href="{{url_for('doc.doc_upload')}}" class="link underline blue glow">
-                    Upload a new document
-                </a>
-            </h3>
-        </li>
-        <li class="mb5 db">
-            <h3 class="ma0 pa0">
-                <a href="{{url_for('doc.doc_upload_bulk')}}" class="link underline blue glow">
-                    Upload a list of documents
-                </a>
-            </h3>
-        </li>
-        <li class="mb5 db">
-            <h3 class="ma0 pa0">
-                <a href="{{url_for('doc.doc_all_docs')}}" class="link underline blue glow">
-                    Show all documents in database
-                </a>
-            </h3>
-        </li>
     </ul>
+    <details>
+        <summary>Admin</summary>
+        <ul class="list ma0 pa0 f4">
+            <li class="mb5 db">
+                <h3 class="ma0 pa0">
+                    <a href="{{url_for('doc.doc_upload')}}" class="link underline blue glow">
+                        Upload a new document
+                    </a>
+                </h3>
+            </li>
+            <li class="mb5 db">
+                <h3 class="ma0 pa0">
+                    <a href="{{url_for('doc.doc_upload_bulk')}}" class="link underline blue glow">
+                        Upload a list of documents
+                    </a>
+                </h3>
+            </li>
+            <li class="mb5 db">
+                <h3 class="ma0 pa0">
+                    <a href="{{url_for('doc.doc_all_docs')}}" class="link underline blue glow">
+                        Show all documents in database
+                    </a>
+                </h3>
+            </li>
+        </ul>
+    </details>
 {% endblock content %}

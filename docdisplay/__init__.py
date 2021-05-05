@@ -8,6 +8,7 @@ from . import blueprints as bp
 from . import db
 from .fetch import fetch_cli
 from .utils import parse_datetime
+from .auth import basic_auth
 
 
 def create_app(test_config=None):
@@ -23,6 +24,8 @@ def create_app(test_config=None):
         CHARITYBASE_API_KEY=os.environ.get("CHARITYBASE_API_KEY"),
         CCEW_API_KEY=os.environ.get("CCEW_API_KEY"),
         FILE_SIZE_LIMT=(1024 ** 2) * 10,  # limit file size to upload - 10MB
+        BASIC_AUTH_USERNAME=os.environ.get("BASIC_AUTH_USERNAME", "user"),
+        BASIC_AUTH_PASSWORD=os.environ.get("BASIC_AUTH_PASSWORD"),
     )
 
     if test_config is None:
@@ -38,6 +41,7 @@ def create_app(test_config=None):
     except OSError:
         pass
 
+    basic_auth.init_app(app)
     db.init_app(app)
     bp.init_app(app)
     app.cli.add_command(fetch_cli)

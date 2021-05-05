@@ -33,6 +33,7 @@ from werkzeug.utils import secure_filename
 from docdisplay.db import get_db
 from docdisplay.upload import convert_file, upload_doc
 from docdisplay.utils import get_nav
+from docdisplay.auth import basic_auth
 
 requests_cache.install_cache("demo_cache")
 
@@ -244,12 +245,14 @@ def doc_search(filetype="html"):
 
 
 @bp.route("/bulkupload")
+@basic_auth.required
 def doc_upload_bulk():
     return render_template("doc_upload_bulk.html.j2")
 
 
 @bp.route("/all_docs")
 @bp.route("/all_docs.<filetype>")
+@basic_auth.required
 def doc_all_docs(filetype="html"):
     es = get_db()
 
@@ -332,6 +335,7 @@ def doc_all_docs(filetype="html"):
 
 @bp.route("/upload", methods=["GET", "POST"])
 @bp.route("/upload.<filetype>", methods=["GET", "POST"])
+@basic_auth.required
 def doc_upload(filetype="html"):
     if filetype not in ["json", "html"]:
         filetype = "html"

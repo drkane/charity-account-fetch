@@ -26,8 +26,12 @@ elasticsearch==6.4.0
     # via -r requirements.in
 fake-useragent==0.1.11
     # via requests-html
-flask==1.1.2
+flask-basicauth==0.2.0
     # via -r requirements.in
+flask==1.1.2
+    # via
+    #   -r requirements.in
+    #   flask-basicauth
 graphqlclient==0.2.4
     # via -r requirements.in
 gunicorn==20.0.4
