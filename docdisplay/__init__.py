@@ -6,9 +6,9 @@ from flask import Flask, render_template
 
 from . import blueprints as bp
 from . import db
+from .auth import basic_auth
 from .fetch import fetch_cli
 from .utils import parse_datetime
-from .auth import basic_auth
 
 
 def create_app(test_config=None):

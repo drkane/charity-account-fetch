@@ -30,10 +30,10 @@ from slugify import slugify
 from tqdm import tqdm
 from werkzeug.utils import secure_filename
 
+from docdisplay.auth import basic_auth
 from docdisplay.db import get_db
 from docdisplay.upload import convert_file, upload_doc
 from docdisplay.utils import get_nav
-from docdisplay.auth import basic_auth
 
 requests_cache.install_cache("demo_cache")
 
