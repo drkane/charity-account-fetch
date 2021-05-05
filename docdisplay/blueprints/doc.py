@@ -171,6 +171,7 @@ def doc_search(filetype="html"):
             },
         )
         if filetype == "csv":
+            params["query"] = params.pop("body")
             doc = scan(
                 es,
                 **params,
@@ -191,7 +192,7 @@ def doc_search(filetype="html"):
             for k, result in enumerate(doc):
                 row = {
                     "search term": q,
-                    **result["_source"],
+                    **{k: v for k, v in result["_source"].items() if k in fields},
                 }
                 writer.writerow(row)
             output = make_response(buffer.getvalue())
