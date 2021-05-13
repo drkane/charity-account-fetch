@@ -232,9 +232,10 @@ def doc_search(filetype="html"):
         )
         results = doc.get("hits", {}).get("hits", [])
         for r in results:
-            r["highlight"]["attachment.content"] = [
-                Markup(s).unescape() for s in r["highlight"]["attachment.content"]
-            ]
+            if r.get("highlight", {}).get("attachment.content"):
+                r["highlight"]["attachment.content"] = [
+                    Markup(s).unescape() for s in r["highlight"]["attachment.content"]
+                ]
     return render_template(
         "doc_search.html.j2",
         results=results,
