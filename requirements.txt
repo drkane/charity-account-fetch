@@ -10,10 +10,14 @@ beautifulsoup4==4.9.3
     # via
     #   -r requirements.in
     #   bs4
+blinker==1.4
+    # via sentry-sdk
 bs4==0.0.1
     # via requests-html
 certifi==2020.12.5
-    # via requests
+    # via
+    #   requests
+    #   sentry-sdk
 chardet==4.0.0
     # via
     #   pdfminer.six
@@ -32,6 +36,7 @@ flask==1.1.2
     # via
     #   -r requirements.in
     #   flask-basicauth
+    #   sentry-sdk
 graphqlclient==0.2.4
     # via -r requirements.in
 gunicorn==20.0.4
@@ -77,6 +82,8 @@ requests==2.25.1
     #   -r requirements.in
     #   requests-cache
     #   requests-html
+sentry-sdk[flask]==1.1.0
+    # via -r requirements.in
 six==1.15.0
     # via
     #   graphqlclient
@@ -95,6 +102,7 @@ urllib3==1.26.4
     #   elasticsearch
     #   pyppeteer
     #   requests
+    #   sentry-sdk
 w3lib==1.22.0
     # via requests-html
 wand==0.6.6

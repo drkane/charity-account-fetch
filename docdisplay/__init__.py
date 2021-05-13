@@ -3,12 +3,26 @@ import os
 import re
 
 from flask import Flask, render_template
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
 
 from . import blueprints as bp
 from . import db
 from .auth import basic_auth
 from .fetch import fetch_cli
 from .utils import parse_datetime
+
+if os.environ.get("SENTRY_DSN"):
+    sentry_sdk.init(
+        dsn=os.environ.get("SENTRY_DSN"),
+        integrations=[FlaskIntegration()],
+        environment=os.environ.get("FLASK_ENV", "production"),
+
+        # Set traces_sample_rate to 1.0 to capture 100%
+        # of transactions for performance monitoring.
+        # We recommend adjusting this value in production.
+        traces_sample_rate=1.0
+    )
 
 
 def create_app(test_config=None):

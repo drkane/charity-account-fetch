@@ -11,3 +11,4 @@ gunicorn
 requests-cache
 python-slugify
 Flask-BasicAuth
+sentry-sdk[flask]
