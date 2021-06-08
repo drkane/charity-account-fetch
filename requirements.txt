@@ -58,7 +58,7 @@ pdfminer.six==20200517
     # via pdfplumber
 pdfplumber==0.5.27
     # via -r requirements.in
-pillow==8.1.2
+pillow==8.2.0
     # via pdfplumber
 pycryptodome==3.10.1
     # via pdfminer.six

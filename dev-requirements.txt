@@ -99,7 +99,7 @@ pdfminer.six==20200517
     #   pdfplumber
 pdfplumber==0.5.27
     # via -r requirements.txt
-pillow==8.1.2
+pillow==8.2.0
     # via
     #   -r requirements.txt
     #   pdfplumber
