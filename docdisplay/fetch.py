@@ -184,8 +184,12 @@ def download_account(
         session = requests.Session()
 
     filename = "{}_{:%Y%m%d}.pdf".format(regno, fyend)
-    r = session.get(url, verify=False)
-    logging.debug("Fetching account PDF: {}".format(url))
+    try:
+        r = session.get(url)
+        logging.debug("Fetching account PDF: {}".format(url))
+    except requests.exceptions.SSLError:
+        logging.warning("SSL Error for account: {}".format(url))
+        r = session.get(url, verify=False)
     if getattr(r, "from_cache", False):
         logging.debug("Used cache")
     try:
