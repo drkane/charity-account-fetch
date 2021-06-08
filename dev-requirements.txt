@@ -23,7 +23,7 @@ bs4==0.0.1
     # via
     #   -r requirements.txt
     #   requests-html
-certifi==2020.12.5
+certifi==2021.5.30
     # via
     #   -r requirements.txt
     #   requests
