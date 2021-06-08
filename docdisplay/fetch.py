@@ -184,7 +184,7 @@ def download_account(
         session = requests.Session()
 
     filename = "{}_{:%Y%m%d}.pdf".format(regno, fyend)
-    r = session.get(url)
+    r = session.get(url, verify=False)
     logging.debug("Fetching account PDF: {}".format(url))
     if getattr(r, "from_cache", False):
         logging.debug("Used cache")
