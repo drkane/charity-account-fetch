@@ -175,7 +175,7 @@ def doc_search(filetype="html"):
             params["query"] = params.pop("body")
             doc = scan(
                 es,
-                request_timeout=1000,
+                request_timeout=10000,
                 **params,
             )
             buffer = io.StringIO()
