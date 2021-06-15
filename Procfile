@@ -1,1 +1,1 @@
-web: gunicorn "docdisplay:create_app()" --timeout 5000
+web: gunicorn "docdisplay:create_app()" --timeout 50000
