@@ -47,7 +47,10 @@ def get_charity(regno):
 
 def search_charities(q, limit=20, skip=0):
     if not q:
-        return []
+        return {
+            "count": 0,
+            "results": [],
+        }
     client = GraphQLClient(current_app.config.get("CHARITYBASE_API_URL"))
     client.inject_token("Apikey " + current_app.config.get("CHARITYBASE_API_KEY"))
     query = """
