@@ -31,13 +31,13 @@ elasticsearch==6.4.0
     # via -r requirements.in
 fake-useragent==0.1.11
     # via requests-html
-flask-basicauth==0.2.0
-    # via -r requirements.in
 flask==1.1.2
     # via
     #   -r requirements.in
     #   flask-basicauth
     #   sentry-sdk
+flask-basicauth==0.2.0
+    # via -r requirements.in
 graphqlclient==0.2.4
     # via -r requirements.in
 gunicorn==20.0.4
@@ -58,7 +58,7 @@ pdfminer.six==20200517
     # via pdfplumber
 pdfplumber==0.5.27
     # via -r requirements.in
-pillow==8.1.2
+pillow==8.3.2
     # via pdfplumber
 pycryptodome==3.10.1
     # via pdfminer.six
@@ -74,15 +74,15 @@ python-dotenv==0.15.0
     # via -r requirements.in
 python-slugify==4.0.1
     # via -r requirements.in
-requests-cache==0.5.2
-    # via -r requirements.in
-requests-html==0.10.0
-    # via -r requirements.in
 requests==2.25.1
     # via
     #   -r requirements.in
     #   requests-cache
     #   requests-html
+requests-cache==0.5.2
+    # via -r requirements.in
+requests-html==0.10.0
+    # via -r requirements.in
 sentry-sdk[flask]==1.1.0
     # via -r requirements.in
 six==1.15.0
