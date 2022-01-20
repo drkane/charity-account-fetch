@@ -74,7 +74,7 @@ jinja2==2.11.3
     # via
     #   -r requirements.txt
     #   flask
-lxml==4.6.3
+lxml==4.7.1
     # via
     #   -r requirements.txt
     #   pyquery
@@ -98,7 +98,7 @@ pdfminer.six==20200517
     #   pdfplumber
 pdfplumber==0.5.27
     # via -r requirements.txt
-pillow==8.1.2
+pillow==9.0.0
     # via
     #   -r requirements.txt
     #   pdfplumber
@@ -167,7 +167,7 @@ tqdm==4.59.0
     #   pyppeteer
 typing-extensions==4.0.1
     # via black
-urllib3==1.26.4
+urllib3==1.26.8
     # via
     #   -r requirements.txt
     #   elasticsearch
