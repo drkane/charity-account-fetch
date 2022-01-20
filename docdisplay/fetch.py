@@ -1,4 +1,5 @@
 import csv
+import json
 import logging
 import os
 import re
@@ -8,9 +9,11 @@ from datetime import date, datetime
 
 import click
 import dateutil.parser
+from graphqlclient import GraphQLClient
 import requests
 from flask import current_app
 from flask.cli import AppGroup
+from requests import Session
 from requests_html import HTMLSession
 from tqdm import tqdm
 
@@ -35,11 +38,14 @@ class CCEW:
 
     def __init__(self, api_key):
         self.api_key = api_key
+        self.api = CharityCommissionAPI(self.api_key, session=Session())
+
+    def _get_regno(self, regno):
+        return regno.lstrip("GB-CHC-")
 
     def get_charity_url(self, regno):
-        regno = regno.lstrip("GB-CHC-")
-        api = CharityCommissionAPI(self.api_key)
-        org_details = api.GetCharityDetails(RegisteredNumber=regno)
+        regno = self._get_regno(regno)
+        org_details = self.api.GetCharityDetails(RegisteredNumber=regno)
         if "organisation_number" not in org_details:
             raise CharityFetchError("Charity {} not found".format(regno))
         return self.url_base.format(org_details["organisation_number"])
@@ -71,6 +77,24 @@ class CCEW:
                 )
         return sorted(accounts, key=lambda x: x.fyend, reverse=True)
 
+    def get_charity(self, regno: str):
+        regno = self._get_regno(regno)
+        org_details = self.api.GetCharityDetails(RegisteredNumber=regno)
+        finances = self.api.GetCharityFinancialHistory(RegisteredNumber=regno)
+        return {
+            "name": org_details["charity_name"],
+            "finances": [
+                {
+                    "financialYear": {
+                        "end": f["financial_period_end_date"][0:10]
+                    },
+                    "income": f["income"],
+                    "spending": f["expenditure"],
+                }
+                for f in finances
+            ],
+        }
+
 
 class CCNI:
 
@@ -81,9 +105,11 @@ class CCNI:
     date_regex = r"([0-9]{1,2} [A-Za-z]+ [0-9]{4})"
     account_url_regex = r"https://apps.charitycommission.gov.uk/ccni_ar_attachments/([0-9]+)_([0-9]+)_CA.pdf"
 
+    def _get_regno(self, regno):
+        return regno.lstrip("GB-NIC-").lstrip("NI")
+
     def get_charity_url(self, regno):
-        regno = regno.lstrip("GB-NIC-").lstrip("NI")
-        return self.url_base.format(regno)
+        return self.url_base.format(self._get_regno(regno))
 
     def list_accounts(self, regno: str, session=HTMLSession()) -> list:
         """
@@ -109,14 +135,19 @@ class CCNI:
             )
         return sorted(accounts, key=lambda x: x.fyend, reverse=True)
 
+    def get_charity(self, regno: str):
+        return None
+
 
 class OSCR:
     name = "oscr"
     url_base = "https://www.oscr.org.uk/about-charities/search-the-register/charity-details?number={}"
 
+    def _get_regno(self, regno):
+        return int(regno.lstrip("GB-SC-").lstrip("SC").lstrip("0"))
+
     def get_charity_url(self, regno):
-        regno = int(regno.lstrip("GB-SC-").lstrip("SC").lstrip("0"))
-        return self.url_base.format(regno)
+        return self.url_base.format(self._get_regno(regno))
 
     def list_accounts(self, regno: str, session=HTMLSession()) -> list:
         """
@@ -149,6 +180,9 @@ class OSCR:
                 )
             )
         return sorted(accounts, key=lambda x: x.fyend, reverse=True)
+
+    def get_charity(self, regno: str):
+        return None
 
 
 def get_charity_type(regno):

@@ -46,9 +46,9 @@ class CharityCommissionAPI:
 
     base_url = "https://api.charitycommission.gov.uk/register/api"
 
-    def __init__(self, authentication_key):
+    def __init__(self, authentication_key, session=None):
         self.auth_key = authentication_key
-        self.session = Session()
+        self.session = session if session else Session()
 
         for name, path in ENDPOINTS.items():
             self._add_endpoint_function(name, path)
@@ -71,8 +71,10 @@ class CharityCommissionAPI:
 
     def _get_request(self, url):
         r = self.session.get(url, headers=self._auth_headers())
+        r.raise_for_status()
         return r.json()
 
     def _post_request(self, url, data):
         r = self.session.post(url, data=data, headers=self._auth_headers())
+        r.raise_for_status()
         return r.json()

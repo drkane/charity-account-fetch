@@ -1,6 +1,6 @@
 import json
 
-from flask import Blueprint, current_app, render_template, request, url_for
+from flask import Blueprint, current_app, render_template, request, url_for, abort
 from graphqlclient import GraphQLClient
 
 from docdisplay.db import get_db
@@ -10,39 +10,6 @@ from docdisplay.utils import get_nav
 CC_ACCOUNT_FILENAME = r"([0-9]+)_AC_([0-9]{4})([0-9]{2})([0-9]{2})_E_C.PDF"
 
 bp = Blueprint("charity", __name__, url_prefix="/charity")
-
-
-def get_charity(regno):
-    client = GraphQLClient(current_app.config.get("CHARITYBASE_API_URL"))
-    client.inject_token("Apikey " + current_app.config.get("CHARITYBASE_API_KEY"))
-    query = """
-    query fetchCharities($regno:ID){
-        CHC {
-            getCharities(filters: {id: [$regno]}) {
-                list {
-                    names(all:false) {
-                        value
-                        primary
-                    }
-                    finances(all:true) {
-                        financialYear {
-                            end
-                        }
-                        income
-                        spending
-                    }
-                }
-            }
-        }
-    }
-    """
-    result = client.execute(query, {"regno": regno})
-    result = json.loads(result)
-    result = (
-        result.get("data", {}).get("CHC", {}).get("getCharities", {}).get("list", [])
-    )
-    if result:
-        return result[0]
 
 
 def search_charities(q, limit=20, skip=0):
@@ -144,7 +111,9 @@ def charity_get(regno, filetype="html"):
     source = get_charity_type(regno)
     accounts = source.list_accounts(regno)
     accounts = {"{:%Y-%m-%d}".format(a.fyend): a for a in accounts}
-    charity = get_charity(regno)
+    charity = source.get_charity(regno)
+    if not charity:
+        abort(404)
     charity["finances"] = [
         {
             **f,
@@ -155,7 +124,7 @@ def charity_get(regno, filetype="html"):
             **documents.get(f["financialYear"]["end"][0:10], {}),
             "fyend": f["financialYear"]["end"][0:10],
         }
-        for f in charity["finances"]
+        for f in charity.get("finances", [])
     ]
     if filetype == "json":
         return {
