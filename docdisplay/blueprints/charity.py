@@ -1,6 +1,6 @@
 import json
 
-from flask import Blueprint, current_app, render_template, request, url_for, abort
+from flask import Blueprint, abort, current_app, render_template, request, url_for
 from graphqlclient import GraphQLClient
 
 from docdisplay.db import get_db

@@ -9,10 +9,10 @@ from datetime import date, datetime
 
 import click
 import dateutil.parser
-from graphqlclient import GraphQLClient
 import requests
 from flask import current_app
 from flask.cli import AppGroup
+from graphqlclient import GraphQLClient
 from requests import Session
 from requests_html import HTMLSession
 from tqdm import tqdm
@@ -85,9 +85,7 @@ class CCEW:
             "name": org_details["charity_name"],
             "finances": [
                 {
-                    "financialYear": {
-                        "end": f["financial_period_end_date"][0:10]
-                    },
+                    "financialYear": {"end": f["financial_period_end_date"][0:10]},
                     "income": f["income"],
                     "spending": f["expenditure"],
                 }
