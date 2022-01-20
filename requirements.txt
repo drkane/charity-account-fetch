@@ -31,13 +31,13 @@ elasticsearch==6.4.0
     # via -r requirements.in
 fake-useragent==0.1.11
     # via requests-html
-flask-basicauth==0.2.0
-    # via -r requirements.in
 flask==1.1.2
     # via
     #   -r requirements.in
     #   flask-basicauth
     #   sentry-sdk
+flask-basicauth==0.2.0
+    # via -r requirements.in
 graphqlclient==0.2.4
     # via -r requirements.in
 gunicorn==20.0.4
@@ -48,7 +48,7 @@ itsdangerous==1.1.0
     # via flask
 jinja2==2.11.3
     # via flask
-lxml==4.6.3
+lxml==4.6.5
     # via pyquery
 markupsafe==1.1.1
     # via jinja2
@@ -74,15 +74,15 @@ python-dotenv==0.15.0
     # via -r requirements.in
 python-slugify==4.0.1
     # via -r requirements.in
-requests-cache==0.5.2
-    # via -r requirements.in
-requests-html==0.10.0
-    # via -r requirements.in
 requests==2.25.1
     # via
     #   -r requirements.in
     #   requests-cache
     #   requests-html
+requests-cache==0.5.2
+    # via -r requirements.in
+requests-html==0.10.0
+    # via -r requirements.in
 sentry-sdk[flask]==1.1.0
     # via -r requirements.in
 six==1.15.0

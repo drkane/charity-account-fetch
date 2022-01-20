@@ -49,13 +49,13 @@ fake-useragent==0.1.11
     #   requests-html
 flake8==3.9.0
     # via -r dev-requirements.in
-flask-basicauth==0.2.0
-    # via -r requirements.txt
 flask==1.1.2
     # via
     #   -r requirements.txt
     #   flask-basicauth
     #   sentry-sdk
+flask-basicauth==0.2.0
+    # via -r requirements.txt
 graphqlclient==0.2.4
     # via -r requirements.txt
 gunicorn==20.0.4
@@ -74,7 +74,7 @@ jinja2==2.11.3
     # via
     #   -r requirements.txt
     #   flask
-lxml==4.6.3
+lxml==4.6.5
     # via
     #   -r requirements.txt
     #   pyquery
@@ -130,15 +130,15 @@ python-dotenv==0.15.0
     # via -r requirements.txt
 python-slugify==4.0.1
     # via -r requirements.txt
-requests-cache==0.5.2
-    # via -r requirements.txt
-requests-html==0.10.0
-    # via -r requirements.txt
 requests==2.25.1
     # via
     #   -r requirements.txt
     #   requests-cache
     #   requests-html
+requests-cache==0.5.2
+    # via -r requirements.txt
+requests-html==0.10.0
+    # via -r requirements.txt
 sentry-sdk[flask]==1.1.0
     # via -r requirements.txt
 six==1.15.0
