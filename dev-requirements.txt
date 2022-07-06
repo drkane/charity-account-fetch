@@ -30,7 +30,7 @@ certifi==2021.5.30
 chardet==4.0.0
     # via
     #   -r requirements.txt
-    #   pdfminer.six
+    #   pdfminer-six
     #   requests
 click==7.1.2
     # via
@@ -49,13 +49,13 @@ fake-useragent==0.1.11
     #   requests-html
 flake8==3.9.0
     # via -r dev-requirements.in
-flask-basicauth==0.2.0
-    # via -r requirements.txt
 flask==1.1.2
     # via
     #   -r requirements.txt
     #   flask-basicauth
     #   sentry-sdk
+flask-basicauth==0.2.0
+    # via -r requirements.txt
 graphqlclient==0.2.4
     # via -r requirements.txt
 gunicorn==20.0.4
@@ -74,7 +74,7 @@ jinja2==2.11.3
     # via
     #   -r requirements.txt
     #   flask
-lxml==4.7.1
+lxml==4.9.1
     # via
     #   -r requirements.txt
     #   pyquery
@@ -92,7 +92,7 @@ parse==1.19.0
     #   requests-html
 pathspec==0.9.0
     # via black
-pdfminer.six==20200517
+pdfminer-six==20200517
     # via
     #   -r requirements.txt
     #   pdfplumber
@@ -109,7 +109,7 @@ pycodestyle==2.7.0
 pycryptodome==3.10.1
     # via
     #   -r requirements.txt
-    #   pdfminer.six
+    #   pdfminer-six
 pyee==8.1.0
     # via
     #   -r requirements.txt
@@ -130,15 +130,15 @@ python-dotenv==0.15.0
     # via -r requirements.txt
 python-slugify==4.0.1
     # via -r requirements.txt
-requests-cache==0.5.2
-    # via -r requirements.txt
-requests-html==0.10.0
-    # via -r requirements.txt
 requests==2.25.1
     # via
     #   -r requirements.txt
     #   requests-cache
     #   requests-html
+requests-cache==0.5.2
+    # via -r requirements.txt
+requests-html==0.10.0
+    # via -r requirements.txt
 sentry-sdk[flask]==1.1.0
     # via -r requirements.txt
 six==1.15.0
@@ -150,7 +150,7 @@ six==1.15.0
 sortedcontainers==2.3.0
     # via
     #   -r requirements.txt
-    #   pdfminer.six
+    #   pdfminer-six
 soupsieve==2.2.1
     # via
     #   -r requirements.txt
