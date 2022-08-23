@@ -13,3 +13,6 @@ python-slugify
 Flask-BasicAuth
 sentry-sdk[flask]
 certifi
+flake8
+black
+isort
