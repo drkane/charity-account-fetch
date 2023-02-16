@@ -34,18 +34,14 @@ cffi==1.15.1
     # via cryptography
 charset-normalizer==2.1.1
     # via
-    #   pdfminer.six
+    #   pdfminer-six
     #   requests
 click==8.1.3
     # via
     #   black
     #   flask
-colorama==0.4.5
-    # via
-    #   click
-    #   tqdm
 cryptography==37.0.4
-    # via pdfminer.six
+    # via pdfminer-six
 cssselect==1.1.0
     # via pyquery
 elasticsearch==6.4.0
@@ -93,7 +89,7 @@ parse==1.19.0
     # via requests-html
 pathspec==0.9.0
     # via black
-pdfminer.six==20220524
+pdfminer-six==20220524
     # via pdfplumber
 pdfplumber==0.7.4
     # via -r requirements.in
@@ -160,7 +156,7 @@ wand==0.6.10
     # via pdfplumber
 websockets==10.3
     # via pyppeteer
-werkzeug==2.2.2
+werkzeug==2.2.3
     # via flask
 zipp==3.8.1
     # via importlib-metadata
